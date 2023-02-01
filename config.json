@@ -1,0 +1,32 @@
+{
+    "input": {
+        "markers": "/Volumes/Extreme SSD/random_mcmicro_files/markers.csv",
+        "img": "/Volumes/Extreme SSD/random_mcmicro_files/PT6_L5_SMP1.tiff",
+        "csv": "/Volumes/Extreme SSD/random_mcmicro_files/PT6_L5_SMP1--unmicst_cell.csv",
+        "csv_cols": ["X_centroid", "Y_centroid"],
+        "output": "/Users/danfreeman/Desktop/vae_output/"
+    },
+    "preprocess": {
+        "min_quantile": 0.02,
+        "max_quantile": 0.98,
+        "log_transform": true,
+        "crop_size": 30
+    },
+    "loader": {
+        "train_size": 0.8,
+        "batch_size": 20,
+        "shuffle": true,
+        "workers": 4
+    },
+    "model": {
+        "conv_dim": [24, 48, 96],
+        "kernel_size": 3,
+        "stride": 2,
+        "latent_dim": 10,
+        "kld_scaler": 1,
+        "learning_rate": 1e-5,
+        "epochs": 1000,
+        "cpu_threads": 4,
+        "seed": 123
+    }
+}
