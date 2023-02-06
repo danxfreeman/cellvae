@@ -15,7 +15,6 @@ class CellAgent:
         # Initialize file paths used in the experiment.
         self.loss_file = os.path.join(self.config.input.output, 'loss.csv')
         self.ckpt_file = os.path.join(self.config.input.output, 'checkpoint.pth.tar')
-        logging.info('****Initializing experiment****')
 
         # Use GPU if available.
         if torch.cuda.is_available():
@@ -151,6 +150,17 @@ class CellAgent:
         self.test_mse_loss /= len(self.loader.valid_loader)
         self.test_kld_loss /= len(self.loader.valid_loader)
 
+    # Embed cells.
+    def embed(self, cells):
+        embedding = torch.zeros(len(cells), self.config.model.latent_dim)
+        with torch.no_grad():
+            for i, x in enumerate(cells):
+                x = x.to(self.device)
+                x = x[None, ]
+                z = self.model.encoder(x)[0]
+                embedding[i, ] = z
+        return embedding
+    
     # Define loss function.
     def loss_function(self, x, x_hat, mu, log_var):
         log_var = log_var.clip(min=-4, max=3)
@@ -161,4 +171,3 @@ class CellAgent:
         return total_loss, mse_loss, kld_loss
 
 # Adam vs. RMSProp?
-
