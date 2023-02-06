@@ -1,6 +1,6 @@
 # Import modules.
 import argparse
-from utils import load_config
+from utils import load_config, init_logger
 from dataset import CellLoader
 from agent import CellAgent
 
@@ -11,6 +11,7 @@ args = parser.parse_args()
 
 # Run experiment.
 config = load_config(args.config)
+init_logger(config)
 loader = CellLoader(config)
 agent = CellAgent(config, loader)
 agent.train()
