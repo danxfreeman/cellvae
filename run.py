@@ -1,8 +1,8 @@
 # Import modules.
 import argparse
-from utils import load_config, init_logger
-from dataset import CellLoader
-from agent import CellAgent
+from cellvae.utils import load_config, init_logger
+from cellvae.dataset import CellLoader
+from cellvae.agent import CellAgent
 
 # Create parser.
 parser = argparse.ArgumentParser('VAE for cell typing')

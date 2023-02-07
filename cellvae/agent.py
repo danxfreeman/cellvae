@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 import logging
 from datetime import datetime
-import model
+from cellvae import model
 
 # VAE Agent.
 class CellAgent:

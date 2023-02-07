@@ -6,7 +6,7 @@ import pandas as pd
 import tifffile as tiff
 import torch
 from torch.utils.data import Dataset, DataLoader, Subset, random_split
-import preprocess
+from cellvae import preprocess
 
 # Create Dataset.
 class CellDataset(Dataset):
@@ -54,7 +54,7 @@ class CellLoader:
         self.idx_file = os.path.join(self.config.input.output, 'train_idx.npy')
         logging.info(f'Checking for train indices at {self.idx_file}')
         if os.path.exists(self.idx_file):
-            logging.info('Loading train indices')
+            logging.info('Train indices loaded')
             self.load_split()
         else:
             logging.info('No train indices found. Applying random split.')
