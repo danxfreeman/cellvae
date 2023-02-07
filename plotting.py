@@ -1,4 +1,5 @@
 # Import modules.
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -33,7 +34,7 @@ class Plot():
         else:
             return self.fig
     
-    # Create cell by channel grid.
+    # Plot cell by channel grid.
     def plot_all_cells(self):
         self.fig = plt.figure(layout='tight')
         self.axs = self.fig.subplots(nrows=len(self.cell_index), ncols=len(self.channel_index))
@@ -66,3 +67,45 @@ class Plot():
         ax.set_xlabel(self.xlab)
         ax.set_ylabel(self.ylab)
         ax.xaxis.set_label_position('top')
+
+    # Plot channels.
+    def plot_channels(self, channel_index=None, channel_name=None, filename=None):
+        self.channel_index = channel_index
+        self.channel_name = channel_name
+        if channel_index is None:
+            self.channel_index = list(range(len(self.config.input.channel_name)))
+        if channel_name is None:
+            self.channel_name = [self.config.input.channel_name[i] for i in self.channel_index]
+        self.plot_channel_grid()
+        if filename:
+            self.fig.savefig(filename)
+        else:
+            return self.fig
+
+    # Plot channel grid.
+    def plot_channel_grid(self):
+        self.fig = plt.figure(figsize=(12, 14), layout='tight') # temp
+        nrows = int(np.ceil(np.sqrt(len(self.channel_index))))
+        ncols = int(np.ceil(len(self.channel_index) / nrows))
+        self.axs = self.fig.subplots(nrows=nrows, ncols=ncols)
+        for row in range(nrows):
+            for col in range(ncols):
+                ch_idx = row * ncols + col
+                if ch_idx < len(self.channel_index):
+                    self.row = row
+                    self.col = col
+                    self.ch_idx = ch_idx
+                    self.ch_name = self.channel_name[ch_idx]
+                    self.plot_one_channel()
+
+    # Plot histogram for one channel.
+    def plot_one_channel(self):
+        dat = [x[self.ch_idx, :, :] for x in self.dataset]
+        dat = [x.flatten() for x in dat]
+        dat = np.concatenate(dat, axis=0)
+        ax = self.axs[self.row, self.col]
+        ax.hist(dat, bins=40, range=(0, 1), color='#619CFF', alpha=0.5, ec='black')
+        ax.set_title(self.ch_name)
+        ax.set_box_aspect(1)
+        ax.set_yticks([])
+        ax.margins(x=0)
