@@ -112,6 +112,7 @@ class CellAgent:
     # Train one epoch.
     def train_one_epoch(self):
         self.model.mode = 'train'
+        self.model.train()
         self.train_total_loss = 0
         self.train_mse_loss = 0
         self.train_kld_loss = 0
@@ -135,6 +136,7 @@ class CellAgent:
     # Validate model.
     def validate(self):
         self.model.mode = 'test'
+        self.model.eval()
         self.test_total_loss = 0
         self.test_mse_loss = 0
         self.test_kld_loss = 0
@@ -150,9 +152,24 @@ class CellAgent:
         self.test_mse_loss /= len(self.loader.valid_loader)
         self.test_kld_loss /= len(self.loader.valid_loader)
 
+    # Reconstruct cells.
+    def recon(self, cells):
+        recon = torch.zeros([len(cells)] + list(cells[0].shape))
+        self.model.mode = 'test'
+        self.model.eval()
+        with torch.no_grad():
+            for i, x in enumerate(cells):
+                x = x.to(self.device)
+                x = x[None, ]
+                x_hat = self.model(x)[0]
+                recon[i, ] = x_hat
+        return recon
+        
     # Embed cells.
     def embed(self, cells):
         embedding = torch.zeros(len(cells), self.config.model.latent_dim)
+        self.model.mode = 'test'
+        self.model.eval()
         with torch.no_grad():
             for i, x in enumerate(cells):
                 x = x.to(self.device)
