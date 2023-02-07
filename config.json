@@ -1,6 +1,6 @@
 {
     "input": {
-        "markers": "/Volumes/Extreme SSD/random_mcmicro_files/markers.csv",
+        "markers": "/Volumes/Extreme SSD/random_mcmicro_files/markers2.csv",
         "img": "/Volumes/Extreme SSD/random_mcmicro_files/PT6_L5_SMP1.tiff",
         "csv": "/Volumes/Extreme SSD/random_mcmicro_files/PT6_L5_SMP1--unmicst_cell.csv",
         "csv_cols": ["X_centroid", "Y_centroid"],
@@ -8,8 +8,8 @@
     },
     "preprocess": {
         "min_quantile": 0.02,
-        "max_quantile": 0.98,
-        "log_transform": true,
+        "max_quantile": 0.999,
+        "log_transform": false,
         "crop_size": 30
     },
     "loader": {
