@@ -9,7 +9,7 @@ def process_img(img, csv, config):
     n_channels = img.shape[0]
     img = img.astype(np.float16)
     for c in range(n_channels):
-        logging.info(f'Preprocessing channel {c}')
+        logging.info(f'Preprocessing {config.input.channel_name[c]}')
         img[c, :, :] = process_one_channel(img[c, :, :], config)
     print(f'Saving thumbnails to {config.input.thumbnails}')
     create_thumbnails(img, csv, config)
@@ -19,9 +19,9 @@ def process_one_channel(channel, config):
     min_cutoff = np.quantile(channel[channel > 0], config.preprocess.min_quantile)
     max_cutoff = np.quantile(channel, config.preprocess.max_quantile)
     channel = np.clip(channel, min_cutoff, max_cutoff)
-    channel = (channel - np.min(channel)) / (np.max(channel) - np.min(channel))
     if config.preprocess.log_transform:
         channel = np.log1p(channel)
+    channel = (channel - np.min(channel)) / (np.max(channel) - np.min(channel))
     return channel
 
 # Crop a thumbnail around each cell.
@@ -44,6 +44,6 @@ def create_thumbnails(img, csv, config):
         channel_names = config.input.channel_name
         metadata = {'axes': 'CXY', 'Channel': {'Name': channel_names}}
         tiff.imwrite(file_, data=thumbnail, metadata=metadata)
-        if i % 1000 == 0:
+        if i % 10000 == 0:
             cur_cell = str(i).zfill(len(str(len(csv))))
             logging.info(f'Cropping cell {cur_cell} of {len(csv)}')
