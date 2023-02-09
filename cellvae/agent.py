@@ -112,8 +112,9 @@ class CellAgent:
             self.current_epoch = epoch
             self.train_one_epoch()
             self.validate()
+            self.log_epoch()
             self.update_lossfile()
-            if (epoch > 0) & (epoch % 10 == 0):
+            if epoch > 1:
                 self.save_checkpoint()
     
     # Train one epoch.
