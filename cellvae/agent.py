@@ -48,13 +48,13 @@ class CellAgent:
     
     # Log epoch status.
     def log_epoch(self):
-        epoch = self.current_epoch
+        epoch = self.current_epoch + 1
         epoch = str(epoch).zfill(len(str(self.config.model.epochs)))
-        train_kdl = 'self.train_kld_loss.detach().numpy().4f'
-        train_mse = 'self.train_mse_loss.detach().numpy().4f'
-        valid_kdl = 'self.test_kld_loss.detach().numpy().4f'
-        valid_mse = 'self.test_mse_loss.detach().numpy().4f'
-        logging.info(f'Finished epoch {epoch}: train_kdl={train_kdl}, train_mse={train_mse}, valid_kdl={valid_kdl}, valid_mse={valid_mse}')
+        train_kdl = f'train_kld={float(self.train_kld_loss):.4f}'
+        train_mse = f'train_mse={float(self.train_mse_loss):.4f}'
+        valid_kdl = f'valid_kdl={float(self.test_kld_loss):.4f}'
+        valid_mse = f'valid_mse={float(self.test_mse_loss):.4f}'
+        logging.info(f'Finished epoch {epoch}: {train_kdl}, {train_mse}, {valid_kdl}, {valid_mse}')
 
     # Save loss to CSV file.
     def update_lossfile(self):
@@ -62,12 +62,12 @@ class CellAgent:
             'date': datetime.now().strftime('%Y-%m-%d'),
             'time': datetime.now().strftime('%H:%M:%S'),
             'epoch': self.current_epoch,
-            'train_kdl_loss': self.train_kld_loss.detach().numpy(),
-            'train_mse_loss': self.train_mse_loss.detach().numpy(),
-            'train_tot_loss': self.train_total_loss.detach().numpy(),
-            'valid_kdl_loss': self.test_kld_loss.detach().numpy(),
-            'valid_mse_loss': self.test_mse_loss.detach().numpy(),
-            'valid_tot_loss': self.test_total_loss.detach().numpy()
+            'train_kdl_loss': float(self.train_kld_loss),
+            'train_mse_loss': float(self.train_mse_loss),
+            'train_tot_loss': float(self.train_total_loss),
+            'valid_kdl_loss': float(self.test_kld_loss),
+            'valid_mse_loss': float(self.test_mse_loss),
+            'valid_tot_loss': float(self.test_total_loss)
         }
         df = pd.DataFrame([log])
         if os.path.isfile(self.loss_file):
@@ -191,9 +191,10 @@ class CellAgent:
         log_var = log_var.clip(min=-4, max=3)
         mse_loss = torch.mean(torch.abs(x - x_hat))
         kld_loss = -0.5 * torch.mean(1 + log_var - mu.pow(2) - log_var.exp())
-        epoch = torch.Tensor([self.current_epoch + 1])
+        kld_loss = kld_loss * 0.0001 # temp
+        epoch = torch.tensor(self.current_epoch)
         kld_anneal = 1 / (1 + torch.exp(-1 * (epoch - 10)))
-        total_loss = mse_loss + kld_loss * kld_anneal
+        total_loss = mse_loss + (kld_loss * kld_anneal)
         return total_loss, mse_loss, kld_loss
 
 # Adam vs. RMSProp?
