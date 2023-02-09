@@ -109,3 +109,24 @@ class Plot():
         ax.set_box_aspect(1)
         ax.set_yticks([])
         ax.margins(x=0)
+    
+    # Plot reconstruction and KDL loss.
+    def plot_loss(self):
+        path = os.path.join(self.config.input.output, 'loss.csv')
+        loss = pd.read_csv(path)
+        fig = plt.figure()
+        axs = fig.subplots(nrows=1, ncols=2, sharex=True, sharey=True)
+        axs[0].plot(loss.epoch, loss.train_kdl_loss, color='orange', label='KDL')
+        axs[0].plot(loss.epoch, loss.train_mse_loss, color='blue', label='MSE')
+        axs[0].plot(loss.epoch, loss.train_tot_loss, color='lime', label='Total')
+        axs[0].set_title('Training')
+        axs[0].set_xlabel('Epoch')
+        axs[0].set_ylabel('Loss')
+        axs[1].plot(loss.epoch, loss.valid_kdl_loss, color='orange')
+        axs[1].plot(loss.epoch, loss.valid_mse_loss, color='blue')
+        axs[1].plot(loss.epoch, loss.valid_tot_loss, color='lime')
+        axs[1].set_title('Validation')
+        axs[1].set_xlabel('Epoch')
+        fig.legend(loc = 'lower center', ncol=3)
+        fig.subplots_adjust(bottom=0.2)
+        return fig
