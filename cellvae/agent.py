@@ -33,8 +33,30 @@ class CellAgent:
             lr=self.config.model.learning_rate)
         self.model.to(self.device)
         self.load_checkpoint()
-        
-    # Update loss file.
+
+    # Log batch status.
+    def log_batch(self):
+        cur_epoch = self.current_epoch + 1
+        tot_epoch = self.config.model.epochs
+        cur_batch = self.current_batch
+        tot_batch = len(self.loader.train_loader)
+        cur_epoch = str(cur_epoch).zfill(len(str(tot_epoch)))
+        cur_batch = str(cur_batch).zfill(len(str(tot_batch)))
+        epoch = f'epoch {cur_epoch} of {tot_epoch}'
+        batch = f'batch {cur_batch} of {tot_batch}'
+        logging.info(f'Training {epoch}, {batch}')
+    
+    # Log epoch status.
+    def log_epoch(self):
+        epoch = self.current_epoch
+        epoch = str(epoch).zfill(len(str(self.config.model.epochs)))
+        train_kdl = 'self.train_kld_loss.detach().numpy().4f'
+        train_mse = 'self.train_mse_loss.detach().numpy().4f'
+        valid_kdl = 'self.test_kld_loss.detach().numpy().4f'
+        valid_mse = 'self.test_mse_loss.detach().numpy().4f'
+        logging.info(f'Finished epoch {epoch}: train_kdl={train_kdl}, train_mse={train_mse}, valid_kdl={valid_kdl}, valid_mse={valid_mse}')
+
+    # Save loss to CSV file.
     def update_lossfile(self):
         log = {
             'date': datetime.now().strftime('%Y-%m-%d'),
@@ -52,20 +74,6 @@ class CellAgent:
             df.to_csv(self.loss_file, mode='a', header=False, index=False)
         else:
             df.to_csv(self.loss_file, mode='w', header=True, index=False)
-
-    # Update log file.
-    def update_logfile(self):
-        cur_epoch = self.current_epoch
-        tot_epoch = self.config.model.epochs
-        cur_batch = self.current_batch
-        tot_batch = len(self.loader.train_loader)
-        cur_epoch = str(cur_epoch).zfill(len(str(tot_epoch)))
-        cur_batch = str(cur_batch).zfill(len(str(tot_batch)))
-        epoch = f'epoch {cur_epoch} of {tot_epoch}'
-        batch = f'batch {cur_batch} of {tot_batch}'
-        loss = self.train_total_loss / self.current_batch
-        loss = f'loss={loss:.4f}'
-        logging.info(f'Training {epoch}, {batch}: {loss}')
 
     # Save checkpoint.
     def save_checkpoint(self):
@@ -97,7 +105,6 @@ class CellAgent:
             logging.info('You have entered CTRL-C. Wait to finalize.')
             self.save_checkpoint()
             self.update_lossfile()
-            self.update_logfile()
 
     # Train model.
     def train(self):
@@ -128,7 +135,7 @@ class CellAgent:
             total_loss.backward()
             self.opt.step()
             if i % 100 == 0:
-                self.update_logfile()
+                self.log_batch()
         self.train_total_loss /= len(self.loader.train_loader)
         self.train_mse_loss /= len(self.loader.train_loader)
         self.train_kld_loss /= len(self.loader.train_loader)
