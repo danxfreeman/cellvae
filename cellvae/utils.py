@@ -25,7 +25,12 @@ def autofill_config(config):
     return config
 
 # Initialize logger.
-def init_logger(config):
+def setup(config):
+    if not os.path.exists(config.input.output):
+        os.makedirs(config.input.output)
+    config_file = os.path.join(config.input.output, 'config.json')
+    with open(config_file, 'w') as fp:
+        json.dump(config, fp, indent=4)
     logr_file = os.path.join(config.input.output, 'log.txt')
     logging.basicConfig(filename=logr_file, level=logging.INFO)
     logging.info('****Initializing experiment****')
