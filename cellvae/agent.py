@@ -161,7 +161,7 @@ class CellAgent:
         self.test_kld_loss /= len(self.loader.valid_loader)
 
     # Reconstruct cells.
-    def recon(self, cells):
+    def predict(self, cells):
         recon = torch.zeros([len(cells)] + list(cells[0].shape))
         self.model.mode = 'test'
         self.model.eval()
@@ -189,10 +189,11 @@ class CellAgent:
     # Define loss function.
     def loss_function(self, x, x_hat, mu, log_var):
         log_var = log_var.clip(min=-4, max=3)
-        mse_loss = torch.mean((x - x_hat)**2)
+        mse_loss = torch.mean(torch.abs(x - x_hat))
         kld_loss = -0.5 * torch.mean(1 + log_var - mu.pow(2) - log_var.exp())
-        kld_loss *= self.config.model.kld_scaler
-        total_loss = mse_loss + kld_loss
+        epoch = torch.Tensor([self.current_epoch + 1])
+        kld_anneal = 1 / (1 + torch.exp(-1 * (epoch - 10)))
+        total_loss = mse_loss + kld_loss * kld_anneal
         return total_loss, mse_loss, kld_loss
 
 # Adam vs. RMSProp?
