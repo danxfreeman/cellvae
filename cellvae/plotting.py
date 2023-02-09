@@ -35,11 +35,11 @@ class Plot():
             self.channel_color = np.resize(colors, len(self.channel_index))
         if self.channel_boost is None:
             self.channel_boost = np.ones(len(self.channel_index))
-        self.plot_all_cells()
+        self.__plot_all_cells()
         return self.fig
     
     # Plot cell by channel grid.
-    def plot_all_cells(self):
+    def __plot_all_cells(self):
         self.fig = plt.figure(layout='tight')
         nrows = len(self.cell_index)
         ncols = len(self.channel_index)
@@ -58,10 +58,10 @@ class Plot():
                 self.ch_boost = self.channel_boost[ch_i]
                 self.xlab = self.ch_name if cell_i == 0 else None
                 self.ylab = self.cell_name if ch_i == 0 else None
-                self.plot_one_cell()
+                self.__plot_one_cell()
     
     # Plot one cell.
-    def plot_one_cell(self):
+    def __plot_one_cell(self):
         x = self.dataset[self.cell_i][self.ch_idx, :, :]
         x = np.stack([x, x, x], axis=-1)
         x = x * mcolors.to_rgb(self.ch_color)
@@ -83,11 +83,11 @@ class Plot():
             self.channel_index = np.arange(len(self.config.input.channel_name))
         if self.channel_name is None:
             self.channel_name = np.array(self.config.input.channel_name)[self.channel_index]
-        self.plot_all_channels()
+        self.__plot_all_channels()
         return self.fig
 
     # Plot channel grid.
-    def plot_all_channels(self):
+    def __plot_all_channels(self):
         self.fig = plt.figure(layout='tight')
         nrows = int(np.ceil(np.sqrt(len(self.channel_index))))
         ncols = int(np.ceil(len(self.channel_index) / nrows))
@@ -100,12 +100,12 @@ class Plot():
                 self.ch_idx = row * ncols + col
                 if self.ch_idx < len(self.channel_index):
                     self.ch_name = self.channel_name[self.ch_idx]
-                    self.plot_one_channel()
+                    self.__plot_one_channel()
                 else:
                     self.axs[self.row, self.col].set_axis_off()
 
     # Plot one channel.
-    def plot_one_channel(self):
+    def __plot_one_channel(self):
         x = [y[self.ch_idx, :, :] for y in self.dataset]
         x = np.stack(x).flatten()
         ax = self.axs[self.row, self.col]
