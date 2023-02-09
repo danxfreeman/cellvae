@@ -15,8 +15,8 @@ class CellDataset(Dataset):
         self.transform = transform
         
         # Create thumbnails.
-        self.config.input.thumbnails = os.path.join(self.config.input.output, 'thumbnails')
-        logging.info(f'Checking for thumbnails at {self.config.input.thumbnails}')
+        self.config.input.thumbnails = os.path.join(self.config.input.output, 'thumbnails/')
+        logging.info(f'Looking for thumbnails at {self.config.input.thumbnails}')
         if not os.path.exists(self.config.input.thumbnails):
             logging.info(f'No thumbnails found. Creating thumbnails.')
             os.makedirs(self.config.input.thumbnails)
@@ -52,7 +52,7 @@ class CellLoader:
     # Split dataset into training and validation sets.
     def split_dataset(self):
         self.idx_file = os.path.join(self.config.input.output, 'train_idx.npy')
-        logging.info(f'Checking for train indices at {self.idx_file}')
+        logging.info(f'Looking for train indices at {self.idx_file}')
         if os.path.exists(self.idx_file):
             logging.info('Train indices loaded')
             self.load_split()

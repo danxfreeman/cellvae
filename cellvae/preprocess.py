@@ -11,7 +11,6 @@ def process_img(img, csv, config):
     for c in range(n_channels):
         logging.info(f'Preprocessing {config.input.channel_name[c]}')
         img[c, :, :] = process_one_channel(img[c, :, :], config)
-    print(f'Saving thumbnails to {config.input.thumbnails}')
     create_thumbnails(img, csv, config)
 
 # Preprocess one channel.
@@ -44,6 +43,6 @@ def create_thumbnails(img, csv, config):
         channel_names = config.input.channel_name
         metadata = {'axes': 'CXY', 'Channel': {'Name': channel_names}}
         tiff.imwrite(file_, data=thumbnail, metadata=metadata)
-        if i % 10000 == 0:
+        if i % 5000 == 0:
             cur_cell = str(i).zfill(len(str(len(csv))))
             logging.info(f'Cropping cell {cur_cell} of {len(csv)}')
