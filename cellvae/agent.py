@@ -32,10 +32,12 @@ class CellAgent:
         self.opt = torch.optim.Adam(self.model.parameters(), 
             lr=self.config.model.learning_rate)
         self.model.to(self.device)
+        self.current_epoch = 0
+        self.current_batch = 0
         self.load_checkpoint()
 
     # Log batch status.
-    def log_batch(self):
+    def update_log_batch(self):
         cur_epoch = self.current_epoch + 1
         tot_epoch = self.config.model.epochs
         cur_batch = self.current_batch
@@ -47,7 +49,7 @@ class CellAgent:
         logging.info(f'Training {epoch}, {batch}')
     
     # Log epoch status.
-    def log_epoch(self):
+    def update_log_epoch(self):
         epoch = self.current_epoch + 1
         epoch = str(epoch).zfill(len(str(self.config.model.epochs)))
         train_kdl = f'train_kld={float(self.train_kld_loss):.4f}'
@@ -108,14 +110,13 @@ class CellAgent:
 
     # Train model.
     def train(self):
-        for epoch in range(self.config.model.epochs):
-            self.current_epoch = epoch
+        while self.current_epoch < self.config.model.epochs:
             self.train_one_epoch()
             self.validate()
-            self.log_epoch()
+            self.update_log_epoch()
             self.update_lossfile()
-            if epoch > 1:
-                self.save_checkpoint()
+            self.save_checkpoint()
+            self.current_epoch += 1
     
     # Train one epoch.
     def train_one_epoch(self):
@@ -124,8 +125,7 @@ class CellAgent:
         self.train_total_loss = 0
         self.train_mse_loss = 0
         self.train_kld_loss = 0
-        for i, x in enumerate(self.loader.train_loader):
-            self.current_batch = i
+        for x in self.loader.train_loader:
             self.opt.zero_grad()
             x = x.to(self.device)
             x_hat, mu, log_var = self.model(x)
@@ -135,8 +135,9 @@ class CellAgent:
             self.train_kld_loss += kld_loss
             total_loss.backward()
             self.opt.step()
-            if i % 100 == 0:
-                self.log_batch()
+            self.current_batch += 1
+            if self.current_batch % 100 == 0:
+                self.update_log_batch()
         self.train_total_loss /= len(self.loader.train_loader)
         self.train_mse_loss /= len(self.loader.train_loader)
         self.train_kld_loss /= len(self.loader.train_loader)
@@ -167,8 +168,8 @@ class CellAgent:
         self.model.eval()
         with torch.no_grad():
             for i, x in enumerate(cells):
-                x = x.to(self.device)
                 x = x[None, ]
+                x = x.to(self.device)
                 x_hat = self.model(x)[0]
                 recon[i, ] = x_hat
         return recon
@@ -180,8 +181,8 @@ class CellAgent:
         self.model.eval()
         with torch.no_grad():
             for i, x in enumerate(cells):
-                x = x.to(self.device)
                 x = x[None, ]
+                x = x.to(self.device)
                 z = self.model.encoder(x)[0]
                 embedding[i, ] = z
         return embedding
@@ -191,7 +192,7 @@ class CellAgent:
         log_var = log_var.clip(min=-4, max=3)
         mse_loss = torch.mean(torch.abs(x - x_hat))
         kld_loss = -0.5 * torch.mean(1 + log_var - mu.pow(2) - log_var.exp())
-        kld_loss = kld_loss * 0.0001 # temp
+        kld_loss = kld_loss * 0.001 # temp
         epoch = torch.tensor(self.current_epoch)
         kld_anneal = 1 / (1 + torch.exp(-1 * (epoch - 10)))
         total_loss = mse_loss + (kld_loss * kld_anneal)
