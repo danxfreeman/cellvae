@@ -1,6 +1,6 @@
 # Import modules.
 import argparse
-from cellvae.utils import load_config, init_logger
+from cellvae.utils import load_config
 from cellvae.dataset import CellLoader
 from cellvae.agent import CellAgent
 
@@ -11,7 +11,6 @@ args = parser.parse_args()
 
 # Run experiment.
 config = load_config(args.config)
-init_logger(config)
 loader = CellLoader(config)
 agent = CellAgent(config, loader)
-agent.train()
+agent.run()
