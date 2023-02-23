@@ -1,7 +1,5 @@
 # Import modules.
-import os
 import json
-import logging
 import pandas as pd
 from easydict import EasyDict
 
@@ -23,14 +21,3 @@ def autofill_config(config):
     config.input.channel_name = list(markers.marker_name)
     config.input.channel_number = list(markers.channel_number)
     return config
-
-# Initialize logger.
-def setup(config):
-    if not os.path.exists(config.input.output):
-        os.makedirs(config.input.output)
-    config_file = os.path.join(config.input.output, 'config.json')
-    with open(config_file, 'w') as fp:
-        json.dump(config, fp, indent=4)
-    logr_file = os.path.join(config.input.output, 'log.txt')
-    logging.basicConfig(filename=logr_file, level=logging.INFO)
-    logging.info('****Initializing experiment****')

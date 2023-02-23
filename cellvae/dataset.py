@@ -1,5 +1,6 @@
 # Import modules.
 import os
+import json
 import logging
 import numpy as np
 import pandas as pd
@@ -13,6 +14,16 @@ class CellDataset(Dataset):
     def __init__(self, config, transform=None):
         self.config = config
         self.transform = transform
+
+        # Initialize logger.
+        if not os.path.exists(config.input.output):
+            os.makedirs(config.input.output)
+        config_file = os.path.join(config.input.output, 'config.json')
+        with open(config_file, 'w') as fp:
+            json.dump(config, fp, indent=4)
+        logr_file = os.path.join(config.input.output, 'log.txt')
+        logging.basicConfig(filename=logr_file, level=logging.INFO)
+        logging.info('****Initializing experiment****')
         
         # Create thumbnails.
         self.config.input.thumbnails = os.path.join(self.config.input.output, 'thumbnails/')
