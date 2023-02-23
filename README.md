@@ -2,7 +2,7 @@
 
 ## Setup
 
-* Create Conda environment with `conda create --name cellvae_env --file cellvae_env.yml`
+* Create Conda environment with `conda create --name cellvae_env --file=cellvae_env.yml`
 * Activate Conda environment with `conda activate cellvae_env`
 
 ## Instructions
