@@ -17,7 +17,10 @@ def load_config(json_file):
 # Autofill configuration file based on data.
 def autofill_config(config):
     markers = pd.read_csv(config.input.markers)
-    config.input.n_channels = len(markers)
-    config.input.channel_name = list(markers.marker_name)
-    config.input.channel_number = list(markers.channel_number)
+    if not config.input.n_channels:
+        config.input.n_channels = len(markers)
+    if not config.input.channel_name:
+        config.input.channel_name = list(markers.marker_name)
+    if not config.input.channel_number:
+        config.input.channel_number = list(markers.channel_number)
     return config
