@@ -43,6 +43,6 @@ def create_thumbnails(img, csv, config):
         channel_names = config.input.channel_name
         metadata = {'axes': 'CXY', 'Channel': {'Name': channel_names}}
         tiff.imwrite(file_, data=thumbnail, metadata=metadata)
-        if i % 5000 == 0:
+        if i % 2000 == 0:
             cur_cell = str(i).zfill(len(str(len(csv))))
             logging.info(f'Cropping cell {cur_cell} of {len(csv)}')
