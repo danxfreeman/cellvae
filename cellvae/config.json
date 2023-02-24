@@ -7,24 +7,26 @@
         "output": "/Users/danfreeman/Desktop/vae_output/"
     },
     "preprocess": {
-        "min_quantile": 0.02,
+        "min_quantile": 0.01,
         "max_quantile": 0.999,
         "log_transform": false,
         "crop_size": 30
     },
     "loader": {
-        "train_size": 0.8,
+        "train_size": 1,
         "batch_size": 20,
         "shuffle": true,
-        "workers": 0
+        "workers": 4
     },
     "model": {
         "conv_dim": [24, 48, 96],
         "kernel_size": 3,
         "stride": 2,
         "latent_dim": 20,
-        "learning_rate": 1e-5,
-        "epochs": 100,
+        "kld_anneal": false,
+        "kld_weight": 1e-5,
+        "learning_rate": 1e-3,
+        "epochs": 500,
         "cpu_threads": 4,
         "seed": 123
     }

@@ -33,7 +33,6 @@ class CellAgent:
             lr=self.config.model.learning_rate)
         self.model.to(self.device)
         self.current_epoch = 0
-        self.current_batch = 0
         self.load_checkpoint()
 
     # Log batch status.
@@ -122,6 +121,7 @@ class CellAgent:
     def train_one_epoch(self):
         self.model.mode = 'train'
         self.model.train()
+        self.current_batch = 0
         self.train_total_loss = 0
         self.train_mse_loss = 0
         self.train_kld_loss = 0
@@ -192,10 +192,13 @@ class CellAgent:
         log_var = log_var.clip(min=-4, max=3)
         mse_loss = torch.mean(torch.abs(x - x_hat))
         kld_loss = -0.5 * torch.mean(1 + log_var - mu.pow(2) - log_var.exp())
-        kld_loss = kld_loss * 0.001 # temp
-        epoch = torch.tensor(self.current_epoch)
-        kld_anneal = 1 / (1 + torch.exp(-1 * (epoch - 10)))
-        total_loss = mse_loss + (kld_loss * kld_anneal)
+        if self.config.model.kld_anneal:
+            epoch = torch.tensor(self.current_epoch)
+            kld_anneal = 1 / (1 + torch.exp(-1 * (epoch - 10)))
+        else:
+            kld_anneal = torch.tensor(1)
+        kld_weighted = kld_loss * kld_anneal * self.config.model.kld_weight
+        total_loss = mse_loss + kld_weighted
         return total_loss, mse_loss, kld_loss
 
 # Adam vs. RMSProp?

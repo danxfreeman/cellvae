@@ -39,7 +39,8 @@
 * `kernel_size`: Kernel size
 * `stride`: Stride
 * `latent_dim`: Number of latent dimensions
-* `kld_scaler`: Constant used to scale KLD loss relative to MSE loss
+* `kld_anneal`: Whether or not to increase KLD weight over initial epochs (used to prevent posterior collapse)
+* `kld_weight`: Constant used to scale KLD loss relative to MSE loss (can be zero)
 * `cpu_threads`: Number of threads to use for inference on CPU
 * `seed`: Use this value to reproduce results
 
