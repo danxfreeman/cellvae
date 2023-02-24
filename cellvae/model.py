@@ -70,7 +70,9 @@ class CellEncoder(nn.Module):
             out_dim = self.conv_dim[k + 1]
             self.encoder.append(
                 nn.Sequential(
-                    nn.Conv2d(in_dim, out_dim, kernel_size=3, stride=2, padding=1),
+                    nn.Conv2d(in_dim, out_dim, 
+                        kernel_size=self.config.model.kernel_size,
+                        stride=self.config.model.stride, padding=1),
                     nn.BatchNorm2d(out_dim),
                     nn.LeakyReLU()
                 )
@@ -119,8 +121,9 @@ class CellDecoder(nn.Module):
             activation = nn.LeakyReLU if k < len(self.conv_dim) - 2 else nn.Sigmoid
             self.decoder.append(
                 nn.Sequential(
-                    nn.ConvTranspose2d(in_dim, out_dim, kernel_size=3, stride=2, 
-                        padding=1, output_padding=1),
+                    nn.ConvTranspose2d(in_dim, out_dim, 
+                        kernel_size=config.model.kernel_size, 
+                        stride=config.model.stride, padding=1, output_padding=1),
                     nn.BatchNorm2d(out_dim),
                     activation() # use sigmoid activation in the final layer
                 )
