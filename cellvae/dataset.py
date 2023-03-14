@@ -86,6 +86,8 @@ class CellLoader:
     
     # Load dataset.
     def load_dataset(self, dataset):
+        if len(dataset) == 0:
+            return None
         return DataLoader(dataset,
             batch_size=self.config.loader.batch_size,
             shuffle=self.config.loader.shuffle,

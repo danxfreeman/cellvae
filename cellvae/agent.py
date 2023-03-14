@@ -157,9 +157,10 @@ class CellAgent:
                 self.test_total_loss += total_loss
                 self.test_mse_loss += mse_loss
                 self.test_kld_loss += kld_loss
-        self.test_total_loss /= len(self.loader.valid_loader)
-        self.test_mse_loss /= len(self.loader.valid_loader)
-        self.test_kld_loss /= len(self.loader.valid_loader)
+        if len(self.loader.valid_loader) > 0:
+            self.test_total_loss /= len(self.loader.valid_loader)
+            self.test_mse_loss /= len(self.loader.valid_loader)
+            self.test_kld_loss /= len(self.loader.valid_loader)
 
     # Reconstruct cells.
     def predict(self, cells):
