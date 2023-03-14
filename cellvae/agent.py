@@ -78,7 +78,6 @@ class CellAgent:
 
     # Save checkpoint.
     def save_checkpoint(self):
-        logging.info(f'Saving checkpoint to {self.ckpt_file}')
         state = {
             'epoch': self.current_epoch,
             'model': self.model.state_dict(),
@@ -149,6 +148,8 @@ class CellAgent:
         self.test_total_loss = 0
         self.test_mse_loss = 0
         self.test_kld_loss = 0
+        if self.loader.valid_loader is None:
+            return
         with torch.no_grad():
             for x in self.loader.valid_loader:
                 x = x.to(self.device)
@@ -157,10 +158,9 @@ class CellAgent:
                 self.test_total_loss += total_loss
                 self.test_mse_loss += mse_loss
                 self.test_kld_loss += kld_loss
-        if len(self.loader.valid_loader) > 0:
-            self.test_total_loss /= len(self.loader.valid_loader)
-            self.test_mse_loss /= len(self.loader.valid_loader)
-            self.test_kld_loss /= len(self.loader.valid_loader)
+        self.test_total_loss /= len(self.loader.valid_loader)
+        self.test_mse_loss /= len(self.loader.valid_loader)
+        self.test_kld_loss /= len(self.loader.valid_loader)
 
     # Reconstruct cells.
     def predict(self, cells):
