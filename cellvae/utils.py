@@ -14,13 +14,12 @@ def load_config(json_file):
         except ValueError:
             print('Invalid JSON file format')
 
-# Autofill configuration file based on data.
+# Autofill configuration file.
 def autofill_config(config):
-    markers = pd.read_csv(config.input.markers)
-    if not config.input.n_channels:
+    keys = set(['n_channels', 'channel_name', 'channel_number'])
+    if not keys.issubset(config.input.keys()):
+        markers = pd.read_csv(config.input.markers)
         config.input.n_channels = len(markers)
-    if not config.input.channel_name:
         config.input.channel_name = list(markers.marker_name)
-    if not config.input.channel_number:
         config.input.channel_number = list(markers.channel_number)
     return config
