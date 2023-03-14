@@ -90,6 +90,26 @@ class CellEncoder(nn.Module):
         self.fc_mu = nn.Linear(self.fc_in, self.latent_dim)
         self.fc_var = nn.Linear(self.fc_in, self.latent_dim)
 
+        # # Build fully connected layer.
+        # self.config.model.fc_dim = [self.config.model.fc_in] + self.config.model.fc_dim
+        # self.fc_layers = len(self.config.model.fc_dim) - 1
+        # self.encoder.append(nn.Flatten())
+        # for k in range(self.fc_layers):
+        #     in_dim = self.config.model.fc_dim[k]
+        #     out_dim = self.config.model.fc_dim[k + 1]
+        #     self.fc.append(
+        #         nn.Sequential(
+        #             nn.Linear(in_dim, out_dim),
+        #             nn.BatchNorm1d(out_dim),
+        #             nn.LeakyReLU()
+        #         )
+        #     )
+
+        # # Built latent layer.
+        # self.encoder = nn.Sequential(*self.encoder)
+        # self.fc_mu = nn.Linear(self.config.model.fc_dim[-1], self.latent_dim)
+        # self.fc_var = nn.Linear(self.config.model.fc_dim[-1], self.latent_dim)
+
     # Forward pass.
     def forward(self, x):
         x = self.encoder(x)
