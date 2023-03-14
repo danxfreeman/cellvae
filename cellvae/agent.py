@@ -15,25 +15,25 @@ class CellAgent:
         # Initialize file paths used in the experiment.
         self.loss_file = os.path.join(self.config.input.output, 'loss.csv')
         self.ckpt_file = os.path.join(self.config.input.output, 'checkpoint.pth.tar')
-
-        # Use GPU if available.
-        if torch.cuda.is_available():
-            logging.info(f'Running on {torch.cuda.device_count()} GPUs')
-            self.model = torch.nn.DataParallel(self.model)
-            self.device = torch.device('cuda')
-        else:
-            logging.info(f'Running on {self.config.model.cpu_threads} CPUs')
-            torch.set_num_interop_threads(self.config.model.cpu_threads)
-            self.device = torch.device('cpu')
         
         # Initialize model.
         torch.manual_seed(self.config.model.seed)
         self.model = model.CellVAE(self.config, mode='train')
         self.opt = torch.optim.Adam(self.model.parameters(), 
             lr=self.config.model.learning_rate)
-        self.model.to(self.device)
         self.current_epoch = 0
         self.load_checkpoint()
+
+        # Use GPU if available.
+        if torch.cuda.is_available():
+            logging.info(f'Running on {torch.cuda.device_count()} GPUs')
+            self.model = torch.nn.DataParallel(self.model)
+            self.device = torch.device('cuda')
+            self.model.to(self.device)
+        else:
+            logging.info(f'Running on {self.config.model.cpu_threads} CPUs')
+            torch.set_num_interop_threads(self.config.model.cpu_threads)
+            self.device = torch.device('cpu')
 
     # Log batch status.
     def update_log_batch(self):
