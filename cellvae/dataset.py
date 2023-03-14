@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import tifffile as tiff
 import torch
-from torch.utils.data import Dataset, DataLoader, Subset, random_split
+from torch.utils.data import Dataset, DataLoader, Subset
 from cellvae import preprocess
 
 # Create Dataset.
@@ -81,7 +81,7 @@ class CellLoader:
     def random_split(self):
         train_size = int(self.config.loader.train_size * len(self.dataset))
         idx = np.arange(len(self.dataset))
-        self.train_idx = np.random.choice(idx, train_size)
+        self.train_idx = np.random.choice(idx, train_size, replace=False)
         self.valid_idx = np.setdiff1d(idx, self.train_idx)
     
     # Load dataset.
