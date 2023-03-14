@@ -21,6 +21,7 @@ def process_one_channel(channel, config):
     if config.preprocess.log_transform:
         channel = np.log1p(channel)
     channel = (channel - np.min(channel)) / (np.max(channel) - np.min(channel))
+    channel = channel * 2 - 1
     return channel
 
 # Crop a thumbnail around each cell.

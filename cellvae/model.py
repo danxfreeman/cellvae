@@ -128,7 +128,7 @@ class CellDecoder(nn.Module):
             out_dim = self.config.model.conv_dim[::-1][k + 1]
             kernel = self.config.model.kernel_size[::-1][k]
             stride = self.config.model.stride[::-1][k]
-            activation = nn.LeakyReLU if k < self.layers - 1 else nn.Sigmoid
+            activation = nn.LeakyReLU if k < self.layers - 1 else nn.Tanh
             self.decoder.append(
                 nn.Sequential(
                     nn.ConvTranspose2d(
