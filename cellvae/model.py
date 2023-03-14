@@ -21,7 +21,7 @@ class CellVAE(nn.Module):
     
     # Pad input to the nearest power of two.
     def conv_padding(self):
-        new_size = 2 ** int(np.ceil(np.log2(self.input_size)))
+        new_size = int(2 ** np.ceil(np.log2(self.input_size)))
         input_pad = (new_size - self.input_size) // 2
         return input_pad
     
@@ -29,10 +29,10 @@ class CellVAE(nn.Module):
     def conv_output_size(self):
         size = 2 ** int(np.ceil(np.log2(self.input_size)))
         layers = len(self.config.model.conv_dim) - 1
-        kernel = self.config.model.kernel_size
-        stride = self.config.model.stride
-        padding = 1
-        for _ in range(layers):
+        for i in range(layers):
+            kernel = self.config.model.kernel_size[i]
+            stride = self.config.model.stride[i]
+            padding = 1
             size = int(((size - kernel + (2 * padding)) / stride) + 1)
         return size
 
@@ -40,7 +40,7 @@ class CellVAE(nn.Module):
     def reparameterize(self, mu, log_var):
         std = torch.exp(0.5 * log_var)
         eps = torch.randn_like(std)
-        return mu + std * eps
+        return mu + (std * eps)
     
     # Forward pass.
     def forward(self, x):
@@ -59,20 +59,26 @@ class CellEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.conv_dim = self.config.model.conv_dim
+        self.layers = len(self.config.model.conv_dim) - 1
         self.fc_in = self.config.model.fc_in
         self.latent_dim = self.config.model.latent_dim
         self.encoder = []
 
         # Build convolutional layer.
-        for k in range(len(self.conv_dim) - 1):
-            in_dim = self.conv_dim[k]
-            out_dim = self.conv_dim[k + 1]
+        for k in range(self.layers):
+            in_dim = self.config.model.conv_dim[k]
+            out_dim = self.config.model.conv_dim[k + 1]
+            kernel = self.config.model.kernel_size[k]
+            stride = self.config.model.stride[k]
             self.encoder.append(
                 nn.Sequential(
-                    nn.Conv2d(in_dim, out_dim, 
-                        kernel_size=self.config.model.kernel_size,
-                        stride=self.config.model.stride, padding=1),
+                    nn.Conv2d(
+                        in_channels=in_dim,
+                        out_channels=out_dim,
+                        kernel_size=kernel,
+                        stride=stride,
+                        padding=1
+                    ),
                     nn.BatchNorm2d(out_dim),
                     nn.LeakyReLU()
                 )
@@ -96,36 +102,45 @@ class CellDecoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.conv_dim = self.config.model.conv_dim
-        self.fc_in = self.config.model.fc_in
-        self.final_dim = self.config.model.conv_dim[-1]
-        self.final_height = self.config.model.final_height
+        self.layers = len(self.config.model.conv_dim) - 1
         self.latent_dim = self.config.model.latent_dim
+        self.fc_out = self.config.model.fc_in
+        self.conv_in = [
+            self.config.model.conv_dim[-1],
+            self.config.model.final_height,
+            self.config.model.final_height
+        ]
         self.decoder = []
         
         # Build fully connected layer.
         self.decoder.append(
             nn.Sequential(
-                nn.Linear(self.latent_dim, self.fc_in),
-                nn.BatchNorm1d(self.fc_in),
+                nn.Linear(self.latent_dim, self.fc_out),
+                nn.BatchNorm1d(self.fc_out),
                 nn.LeakyReLU()
             )
         )
         
         # Build convolutional layer.
-        input_dim = [self.final_dim, self.final_height, self.final_height]
-        self.decoder.append(nn.Unflatten(1, input_dim))
-        for k in range(len(self.conv_dim) - 1):
-            in_dim = self.conv_dim[::-1][k]
-            out_dim = self.conv_dim[::-1][k + 1]
-            activation = nn.LeakyReLU if k < len(self.conv_dim) - 2 else nn.Sigmoid
+        self.decoder.append(nn.Unflatten(1, self.conv_in))
+        for k in range(self.layers):
+            in_dim = self.config.model.conv_dim[::-1][k]
+            out_dim = self.config.model.conv_dim[::-1][k + 1]
+            kernel = self.config.model.kernel_size[::-1][k]
+            stride = self.config.model.stride[::-1][k]
+            activation = nn.LeakyReLU if k < self.layers - 1 else nn.Sigmoid
             self.decoder.append(
                 nn.Sequential(
-                    nn.ConvTranspose2d(in_dim, out_dim, 
-                        kernel_size=config.model.kernel_size, 
-                        stride=config.model.stride, padding=1, output_padding=1),
+                    nn.ConvTranspose2d(
+                        in_channels=in_dim,
+                        out_channels=out_dim,
+                        kernel_size=kernel,
+                        stride=stride,
+                        padding=1,
+                        output_padding=1
+                    ),
                     nn.BatchNorm2d(out_dim),
-                    activation() # use sigmoid activation in the final layer
+                    activation()
                 )
             )
         self.decoder = nn.Sequential(*self.decoder)
