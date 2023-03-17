@@ -148,6 +148,7 @@ class CellDecoder(nn.Module):
             out_dim = self.config.model.conv_dim[::-1][k + 1]
             kernel = self.config.model.kernel_size[::-1][k]
             stride = self.config.model.stride[::-1][k]
+            out_pad = stride - 1
             activation = nn.LeakyReLU if k < self.layers - 1 else nn.Tanh
             self.decoder.append(
                 nn.Sequential(
@@ -157,7 +158,7 @@ class CellDecoder(nn.Module):
                         kernel_size=kernel,
                         stride=stride,
                         padding=1,
-                        output_padding=1
+                        output_padding=out_pad
                     ),
                     nn.BatchNorm2d(out_dim),
                     activation()
