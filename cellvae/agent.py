@@ -5,6 +5,7 @@ import torch
 import logging
 from datetime import datetime
 from cellvae import model
+from torch import nn
 
 # VAE Agent.
 class CellAgent:
@@ -13,27 +14,65 @@ class CellAgent:
         self.loader = loader
 
         # Initialize file paths used in the experiment.
-        self.loss_file = os.path.join(self.config.input.output, 'loss.csv')
         self.ckpt_file = os.path.join(self.config.input.output, 'checkpoint.pth.tar')
+        self.loss_file = os.path.join(self.config.input.output, 'loss.csv')
         
         # Initialize model.
         torch.manual_seed(self.config.model.seed)
         self.model = model.CellVAE(self.config, mode='train')
         self.opt = torch.optim.Adam(self.model.parameters(), 
             lr=self.config.model.learning_rate)
-        self.current_epoch = 0
-        self.load_checkpoint()
+        
+        # Load or initialize weights.
+        logging.info(f'Looking for checkpoint file at {self.ckpt_file}')
+        try:
+            self.load_checkpoint()
+            logging.info(f'Checkpoint loaded at epoch {self.current_epoch}')
+        except OSError:
+            logging.info(f'No checkpoint file found. Applying random initialization.')
+            self.current_epoch = 0
+            self.init_weights()
 
         # Use GPU if available.
         if torch.cuda.is_available():
             logging.info(f'Running on {torch.cuda.device_count()} GPUs')
-            self.model = torch.nn.DataParallel(self.model)
+            self.model = nn.DataParallel(self.model)
             self.device = torch.device('cuda')
-            self.model.to(self.device)
         else:
             logging.info(f'Running on {self.config.model.cpu_threads} CPUs')
             torch.set_num_interop_threads(self.config.model.cpu_threads)
             self.device = torch.device('cpu')
+        self.model.to(self.device)
+
+    # Initlize weights.
+    def init_weights(self):
+        for m in self.model.modules():
+            if isinstance(m, (nn.Conv2d, nn.ConvTranspose2d, nn.Linear)):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.zeros_(m.bias)
+    
+    # Save checkpoint.
+    def save_checkpoint(self):
+        try:
+            state = {
+                'epoch': self.current_epoch,
+                'model': self.model.modules.state_dict(),
+                'optimizer': self.opt.modules.state_dict(),
+            }
+        except AttributeError:
+            state = {
+                'epoch': self.current_epoch,
+                'model': self.model.state_dict(),
+                'optimizer': self.opt.state_dict(),
+            }
+        torch.save(state, self.ckpt_file)
+
+    # Load checkpoint.
+    def load_checkpoint(self):
+        checkpoint = torch.load(self.ckpt_file)
+        self.current_epoch = checkpoint['epoch']
+        self.model.load_state_dict(checkpoint['model'])
+        self.opt.load_state_dict(checkpoint['optimizer'])
 
     # Log batch status.
     def update_log_batch(self):
@@ -75,27 +114,6 @@ class CellAgent:
             df.to_csv(self.loss_file, mode='a', header=False, index=False)
         else:
             df.to_csv(self.loss_file, mode='w', header=True, index=False)
-
-    # Save checkpoint.
-    def save_checkpoint(self):
-        state = {
-            'epoch': self.current_epoch,
-            'model': self.model.state_dict(),
-            'optimizer': self.opt.state_dict(),
-        }
-        torch.save(state, self.ckpt_file)
-
-    # Load checkpoint.
-    def load_checkpoint(self):
-        try:
-            logging.info(f'Looking for checkpoint file at {self.ckpt_file}')
-            checkpoint = torch.load(self.ckpt_file)
-            self.current_epoch = checkpoint['epoch']
-            self.model.load_state_dict(checkpoint['model'])
-            self.opt.load_state_dict(checkpoint['optimizer'])
-            logging.info(f'Checkpoint loaded at epoch {self.current_epoch}')
-        except OSError:
-            logging.info(f'No checkpoint file found')
 
     # Main operator.
     def run(self):
