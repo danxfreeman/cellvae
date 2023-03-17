@@ -2,15 +2,15 @@
     "input": {
         "markers": "/Volumes/Extreme SSD/random_mcmicro_files/markers2.csv",
         "img": "/Volumes/Extreme SSD/random_mcmicro_files/PT6_L5_SMP1.tiff",
-        "csv": "/Volumes/Extreme SSD/random_mcmicro_files/PT6_L5_SMP1--unmicst_cell.csv",
+        "csv": "/Volumes/Extreme SSD/random_mcmicro_files/PT6_L5_SMP1--unmicst_cell_5k.csv",
         "csv_cols": ["X_centroid", "Y_centroid"],
         "output": "/Users/danfreeman/Desktop/vae_output/"
     },
     "preprocess": {
-        "min_quantile": 0,
+        "min_quantile": 0.02,
         "max_quantile": 0.999,
         "log_transform": false,
-        "crop_size": 30
+        "crop_size": 20
     },
     "loader": {
         "train_size": 1,
@@ -19,16 +19,15 @@
         "workers": 4
     },
     "model": {
-        "conv_dim": [32, 64, 128, 128],
-        "kernel_size": [3, 3, 3, 3],
-        "stride": [2, 2, 2, 2],
-        "fc_dim": 50,
+        "conv_dim": [32, 64, 64, 128, 128, 256],
+        "kernel_size": [3, 3, 3, 3, 3, 3],
+        "stride": [2, 2, 1, 2, 1, 2],
         "latent_dim": 20,
-        "kld_anneal": false,
         "kld_weight": 0,
-        "learning_rate": 1e-3,
-        "epochs": 500,
-        "cpu_threads": 4,
+        "kld_anneal": false,
+        "learning_rate": 1e-5,
+        "epochs": 200,
+        "cpu_threads": 1,
         "seed": 123
     }
 }
