@@ -56,8 +56,8 @@ class CellAgent:
         try:
             state = {
                 'epoch': self.current_epoch,
-                'model': self.model.modules.state_dict(),
-                'optimizer': self.opt.modules.state_dict(),
+                'model': self.model.module.state_dict(),
+                'optimizer': self.opt.module.state_dict(),
             }
         except AttributeError:
             state = {
