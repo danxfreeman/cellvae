@@ -7,6 +7,7 @@ import pandas as pd
 import tifffile as tiff
 import torch
 from torch.utils.data import Dataset, DataLoader, Subset
+from torchvision.transforms import Compose
 from cellvae import preprocess
 
 # Create Dataset.
@@ -53,7 +54,8 @@ class CellDataset(Dataset):
 class CellLoader:
     def __init__(self, config):
         self.config = config
-        self.dataset = CellDataset(self.config)
+        self.transform = Compose([Vignette(config)])
+        self.dataset = CellDataset(self.config, transform=self.transform)
         self.split_dataset()
         self.train_set = Subset(self.dataset, self.train_idx)
         self.valid_set = Subset(self.dataset, self.valid_idx)
@@ -92,3 +94,15 @@ class CellLoader:
             batch_size=self.config.loader.batch_size,
             shuffle=self.config.loader.shuffle,
             num_workers=self.config.loader.workers)
+
+# Create Vignette transformer.
+class Vignette:
+    def __init__(self, config):
+        self.vignette = config.preprocess.vignette
+        self.size = config.preprocess.crop_size
+        x = np.linspace(-self.vignette, self.vignette, self.size)
+        norm = np.exp(-x**2/2)
+        self.mask = norm[:, None] * norm
+
+    def __call__(self, x):
+        return x * self.mask

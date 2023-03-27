@@ -10,7 +10,8 @@
         "min_quantile": 0.02,
         "max_quantile": 0.999,
         "log_transform": false,
-        "crop_size": 20
+        "crop_size": 20,
+        "vignette": 0
     },
     "loader": {
         "train_size": 1,
