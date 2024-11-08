@@ -1,108 +1,86 @@
-# Import modules.
 import os
-import json
 import logging
+
+import torch
 import numpy as np
 import pandas as pd
 import tifffile as tiff
-import torch
-from torch.utils.data import Dataset, DataLoader, Subset
-from torchvision.transforms import Compose
-from cellvae import preprocess
 
-# Create Dataset.
+from torch.utils.data import DataLoader, Dataset, Subset
+
+from cellvae.preprocess import ImageCropper, Vignette
+
 class CellDataset(Dataset):
-    def __init__(self, config, transform=None):
-        self.config = config
-        self.transform = transform
 
-        # Initialize logger.
-        if not os.path.exists(config.input.output):
-            os.makedirs(config.input.output)
-        config_file = os.path.join(config.input.output, 'config.json')
-        with open(config_file, 'w') as fp:
-            json.dump(config, fp, indent=4)
-        logr_file = os.path.join(config.input.output, 'log.txt')
-        logging.basicConfig(filename=logr_file, level=logging.INFO)
-        logging.info('****Initializing experiment****')
-        
-        # Create thumbnails.
-        self.config.input.thumbnails = os.path.join(self.config.input.output, 'thumbnails/')
-        logging.info(f'Looking for thumbnails at {self.config.input.thumbnails}')
-        if not os.path.exists(self.config.input.thumbnails):
-            logging.info(f'No thumbnails found. Creating thumbnails.')
-            os.makedirs(self.config.input.thumbnails)
-            csv = pd.read_csv(self.config.input.csv, usecols=self.config.input.csv_cols)
-            csv = csv.to_numpy(dtype='int')
-            img = tiff.imread(self.config.input.img, key=self.config.input.channel_number)
-            preprocess.process_img(img, csv, self.config)
-        else:
-            logging.info('Thumbnails already exist')
+    def __init__(self, config):
+        self.config = config
+        self.vignette = Vignette(self.config)
+        self.load_thumbnails()
     
+    def load_thumbnails(self):
+        """Load or create thumbnails."""
+        logging.info('Checking for thumbnails...')
+        if os.path.exists('data/thumbnails'):
+            logging.info('Thumbnails loaded.')
+        else:
+            logging.info('Creating thumbnails.')
+            self.create_thumbnails()
+    
+    def create_thumbnails(self):
+        """Create thumbnails."""
+        os.makedirs('data/thumbnails')
+        csv = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_xy)
+        csv = csv.to_numpy(dtype='int')
+        img = tiff.imread(self.config.data.img)
+        img = np.moveaxis(img, 2, 0) # temp
+        cropper = ImageCropper(self.config, img, csv)
+        cropper.crop()
     def __len__(self):
-        files = os.listdir(self.config.input.thumbnails)
+        files = os.listdir('data/thumbnails')
         return len(files)
     
     def __getitem__(self, idx):
-        file_ = os.path.join(self.config.input.thumbnails, f'cell_{idx}.tif')
-        thumbnail = tiff.imread(file_)
-        if self.transform:
-            thumbnail = self.transform(thumbnail)
-        return torch.Tensor(thumbnail)
+        path = f'data/thumbnails/cell_{idx}.tif'
+        thumbnail = tiff.imread(path)
+        thumbnail = self.vignette(thumbnail)
+        return torch.Tensor(thumbnail), torch.tensor([1.]) # TODO: add label logic
 
-# Create DataLoader.
 class CellLoader:
+
     def __init__(self, config):
         self.config = config
-        self.transform = Compose([Vignette(config)])
-        self.dataset = CellDataset(self.config, transform=self.transform)
-        self.split_dataset()
+        self.dataset = CellDataset(self.config)
+        self.load_split()
+        self.apply_split()
+    
+    def load_split(self):
+        """Load or create split indices."""
+        logging.info('Checking for train/test split...')
+        try:
+            self.train_idx = np.load('data/train_idx.npy')
+            logging.info('Split loaded.')
+        except FileNotFoundError:
+            logging.info('Creating new split.')
+            self.create_split()
+        self.valid_idx = np.setdiff1d(np.arange(len(self.dataset)), self.train_idx)
+
+    def create_split(self):
+        """Create split indices."""
+        train_size = int(self.config.train.train_p * len(self.dataset))
+        idx = np.arange(len(self.dataset))
+        self.train_idx = np.random.choice(idx, train_size, replace=False)
+        np.save('data/train_idx.npy', self.train_idx)
+    
+    def apply_split(self):
         self.train_set = Subset(self.dataset, self.train_idx)
         self.valid_set = Subset(self.dataset, self.valid_idx)
         self.train_loader = self.load_dataset(self.train_set)
         self.valid_loader = self.load_dataset(self.valid_set)
     
-    # Split dataset into training and validation sets.
-    def split_dataset(self):
-        self.idx_file = os.path.join(self.config.input.output, 'train_idx.npy')
-        logging.info(f'Looking for train indices at {self.idx_file}')
-        if os.path.exists(self.idx_file):
-            logging.info('Train indices loaded')
-            self.load_split()
-        else:
-            logging.info('No train indices found. Applying random split.')
-            self.random_split()
-            np.save(self.idx_file, self.train_idx)
-
-    # Load existing split.
-    def load_split(self):
-        self.train_idx = np.load(self.idx_file)
-        self.valid_idx = np.setdiff1d(np.arange(len(self.dataset)), self.train_idx)
-
-    # Apply random split.
-    def random_split(self):
-        train_size = int(self.config.loader.train_size * len(self.dataset))
-        idx = np.arange(len(self.dataset))
-        self.train_idx = np.random.choice(idx, train_size, replace=False)
-        self.valid_idx = np.setdiff1d(idx, self.train_idx)
-    
-    # Load dataset.
     def load_dataset(self, dataset):
         if len(dataset) == 0:
             return None
         return DataLoader(dataset,
-            batch_size=self.config.loader.batch_size,
-            shuffle=self.config.loader.shuffle,
-            num_workers=self.config.loader.workers)
-
-# Create Vignette transformer.
-class Vignette:
-    def __init__(self, config):
-        self.vignette = config.preprocess.vignette
-        self.size = config.preprocess.crop_size
-        x = np.linspace(-self.vignette, self.vignette, self.size)
-        norm = np.exp(-x**2/2)
-        self.mask = norm[:, None] * norm
-
-    def __call__(self, x):
-        return x * self.mask
+                          batch_size=self.config.train.batch_size,
+                          num_workers=self.config.train.num_workers,
+                          shuffle=True)

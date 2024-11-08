@@ -1,0 +1,21 @@
+{
+    "data": {
+        "img": "/Users/danfreeman1/Desktop/patches_1.tif",
+        "csv": "/Users/danfreeman1/Desktop/my_csv.csv",
+        "csv_xy": ["X_Centroid", "Y_Centroid"]
+    },
+    "preprocess": {
+        "crop_size": 10,
+        "vignette": 0
+    },
+    "train": {
+        "train_p": 0.8,
+        "batch_size": 4,
+        "num_epochs": 3,
+        "num_workers": 1
+    },
+    "model": {
+        "seed": 123,
+        "learning_rate": 0.05
+    }
+}
