@@ -25,17 +25,9 @@ class CellDataset(Dataset):
             logging.info('Thumbnails loaded.')
         else:
             logging.info('Creating thumbnails.')
-            self.create_thumbnails()
+            cropper = ImageCropper(self.config)
+            cropper.crop()
     
-    def create_thumbnails(self):
-        """Create thumbnails."""
-        os.makedirs('data/thumbnails')
-        csv = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_xy)
-        csv = csv.to_numpy(dtype='int')
-        img = tiff.imread(self.config.data.img)
-        img = np.moveaxis(img, 2, 0) # temp
-        cropper = ImageCropper(self.config, img, csv)
-        cropper.crop()
     def load_labels(self):
         """Load labels."""
         labels = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_labels)

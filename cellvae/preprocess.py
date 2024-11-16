@@ -1,17 +1,30 @@
 import logging
 
 import numpy as np
-
+import pandas as pd
 import tifffile as tiff
+import dask.array as da
 
 class ImageCropper:
 
-    def __init__(self, config, img, csv):
-        self.crop_size = config.preprocess.crop_size
-        self.img = img
-        self.csv = csv
+    def __init__(self, config):
+        self.config = config
+        self.crop_size = self.config.preprocess.crop_size
+        self.load_image()
+        self.load_centroids()
         self.total = len(self.csv)
         self.cropped = 0
+
+    def load_image(self):
+        """Lazy-load TIFF image."""
+        with tiff.TiffFile(self.config.data.img) as tif:
+            self.img = tif.series[0].asarray(out='dask')
+            self.img = da.moveaxis(self.img, -1, 0) # temp
+    
+    def load_centroids(self):
+        """Load cell coordinates."""
+        self.csv = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_xy)
+        self.csv = self.csv.to_numpy(dtype='int')
     
     def crop(self):
         """Crop all cells."""
