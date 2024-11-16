@@ -1,21 +1,22 @@
 {
     "data": {
-        "img": "/Users/danfreeman1/Desktop/patches_1.tif",
-        "csv": "/Users/danfreeman1/Desktop/my_csv.csv",
-        "csv_xy": ["X_Centroid", "Y_Centroid"]
+        "img": "/n/scratch/users/d/daf179/melanoma/LSP13076/vHE_LSP13076_pyramid.ome.tif",
+        "csv": "/n/scratch/users/d/daf179/melanoma/LSP13076/mitosis.csv",
+        "csv_xy": ["X_centroid", "Y_centroid"],
+        "csv_labels": ["mitotic"],
     },
     "preprocess": {
-        "crop_size": 10,
+        "crop_size": 14,
         "vignette": 0
     },
     "train": {
-        "train_p": 0.8,
-        "batch_size": 4,
-        "num_epochs": 3,
-        "num_workers": 1
+        "train_p": 0.9,
+        "batch_size": 256,
+        "num_epochs": 20,
+        "num_workers": 8
     },
     "model": {
         "seed": 123,
-        "learning_rate": 0.05
+        "learning_rate": 0.001
     }
 }
