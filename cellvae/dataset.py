@@ -16,6 +16,7 @@ class CellDataset(Dataset):
         self.config = config
         self.vignette = Vignette(self.config)
         self.load_thumbnails()
+        self.load_labels()
     
     def load_thumbnails(self):
         """Load or create thumbnails."""
@@ -35,6 +36,13 @@ class CellDataset(Dataset):
         img = np.moveaxis(img, 2, 0) # temp
         cropper = ImageCropper(self.config, img, csv)
         cropper.crop()
+    def load_labels(self):
+        """Load labels."""
+        labels = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_labels)
+        assert len(labels) == self.__len__()
+        self.labels = torch.tensor(labels.to_numpy().flatten())
+        pass
+
     def __len__(self):
         files = os.listdir('data/thumbnails')
         return len(files)
@@ -43,7 +51,7 @@ class CellDataset(Dataset):
         path = f'data/thumbnails/cell_{idx}.tif'
         thumbnail = tiff.imread(path)
         thumbnail = self.vignette(thumbnail)
-        return torch.Tensor(thumbnail), torch.tensor([1.]) # TODO: add label logic
+        return torch.Tensor(thumbnail), self.labels[idx]
 
 class CellLoader:
 
