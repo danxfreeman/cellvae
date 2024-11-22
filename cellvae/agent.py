@@ -36,7 +36,7 @@ class CellAgent:
             'model': self.model.state_dict(),
             'optimizer': self.opt.state_dict()
         }
-        torch.save(state, 'logs/checkpoint.pth.tar')
+        torch.save(state, 'data/checkpoint.pth.tar')
 
     def run(self):
         """Main operator."""
