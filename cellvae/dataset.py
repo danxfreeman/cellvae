@@ -31,13 +31,12 @@ class CellDataset(Dataset):
     def load_labels(self):
         """Load labels."""
         labels = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_labels)
-        assert len(labels) == self.__len__()
-        self.labels = torch.tensor(labels.to_numpy().flatten())
-        pass
+        labels = labels.to_numpy()
+        cropped = np.load('data/cropped.npy')
+        self.labels = torch.tensor(labels[cropped], dtype=torch.float32)
 
     def __len__(self):
-        files = os.listdir('data/thumbnails')
-        return len(files)
+        return len(self.labels)
     
     def __getitem__(self, idx):
         path = f'data/thumbnails/cell_{idx}.tif'

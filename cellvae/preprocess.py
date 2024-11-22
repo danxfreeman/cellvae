@@ -14,6 +14,7 @@ class ImageCropper:
         self.load_centroids()
         self.total = len(self.csv)
         self.cropped = 0
+        self.indices = []
 
     def load_image(self):
         """Load TIFF image."""
@@ -25,13 +26,18 @@ class ImageCropper:
         self.csv = self.csv.to_numpy(dtype='int')
     
     def crop(self):
-        """Crop all cells."""
+        """Crop cells and save indices."""
+        self.crop_cells()
+        np.save(f'data/cropped.npy', np.array(self.indices))
+    
+    def crop_cells(self):
+        """Crop cells."""
         for idx, (xcenter, ycenter) in enumerate(self.csv):
-            self.crop_cell(xcenter, ycenter)
+            self.crop_one_cell(idx, xcenter, ycenter)
             if idx % 100 == 0:
                 logging.info(f'Cropping cell {idx} of {self.total}.')
     
-    def crop_cell(self, xcenter, ycenter):
+    def crop_one_cell(self, idx, xcenter, ycenter):
         """Crop one cell."""
         expand = self.crop_size // 2
         xstart = xcenter - expand
@@ -41,6 +47,7 @@ class ImageCropper:
         if xstart >= 0 and ystart >= 0 and xend <= self.img.shape[1] and yend <= self.img.shape[2]:
             tiff.imwrite(f'data/thumbnails/cell_{self.cropped}.tif', data=thumbnail)
             thumbnail = self.img[:, ystart:yend, xstart:xend]
+            self.indices.append(idx)
             self.cropped += 1
 
 class Vignette:
