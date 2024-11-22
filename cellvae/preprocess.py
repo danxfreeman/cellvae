@@ -39,8 +39,8 @@ class ImageCropper:
         xend = xstart + self.crop_size
         yend = ystart + self.crop_size
         if xstart >= 0 and ystart >= 0 and xend <= self.img.shape[1] and yend <= self.img.shape[2]:
-            thumbnail = self.img[:, xstart:xend, ystart:yend]
             tiff.imwrite(f'data/thumbnails/cell_{self.cropped}.tif', data=thumbnail)
+            thumbnail = self.img[:, ystart:yend, xstart:xend]
             self.cropped += 1
 
 class Vignette:
