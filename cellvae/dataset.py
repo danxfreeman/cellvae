@@ -21,7 +21,7 @@ class CellDataset(Dataset):
     def load_thumbnails(self):
         """Load or create thumbnails."""
         logging.info('Checking for thumbnails...')
-        if os.path.exists('data/thumbnails'):
+        if os.path.exists(self.config.data.thumbnails):
             logging.info('Thumbnails loaded.')
         else:
             logging.info('Creating thumbnails.')
@@ -39,7 +39,7 @@ class CellDataset(Dataset):
         return len(self.labels)
     
     def __getitem__(self, idx):
-        path = f'data/thumbnails/cell_{idx}.tif'
+        path = f'{self.config.data.thumbnails}/cell_{idx}.tif'
         thumbnail = tiff.imread(path)
         thumbnail = self.vignette(thumbnail)
         return torch.Tensor(thumbnail), self.labels[idx]

@@ -4,6 +4,7 @@
         "csv": "/n/scratch/users/d/daf179/melanoma/LSP13076/mitosis.csv",
         "csv_xy": ["X_centroid", "Y_centroid"],
         "csv_labels": ["mitotic"],
+        "thumbnails": "/n/scratch/users/d/daf179/melanoma/LSP13076/thumbnails"
     },
     "preprocess": {
         "crop_size": 14,
