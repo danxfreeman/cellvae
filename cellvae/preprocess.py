@@ -16,10 +16,8 @@ class ImageCropper:
         self.cropped = 0
 
     def load_image(self):
-        """Lazy-load TIFF image."""
-        with tiff.TiffFile(self.config.data.img) as tif:
-            self.img = tif.series[0].asarray(out='dask')
-            self.img = da.moveaxis(self.img, -1, 0) # temp
+        """Load TIFF image."""
+        self.img = tiff.imread(self.config.data.img)
     
     def load_centroids(self):
         """Load cell coordinates."""
