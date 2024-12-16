@@ -46,8 +46,8 @@ class ImageCropper:
         ystart = ycenter - expand
         xend = xstart + self.crop_size
         yend = ystart + self.crop_size
-            thumbnail = self.img[:, ystart:yend, xstart:xend]
         if xstart >= 0 and ystart >= 0 and xend <= self.img.shape[2] and yend <= self.img.shape[1]:
+            thumbnail = self.img[:, ystart:yend, xstart:xend] / 255
             tiff.imwrite(f'{self.config.data.thumbnails}/cell_{self.cropped}.tif', data=thumbnail)
             self.indices.append(idx)
             self.cropped += 1
