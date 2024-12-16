@@ -7,10 +7,10 @@ class CellCNN(nn.Module):
         self.config = config
         conv_output_size = 6272 # TODO: calculate dynamically
         self.layers = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=1, padding=0),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=0),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Flatten(),
