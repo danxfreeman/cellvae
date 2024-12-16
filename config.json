@@ -11,7 +11,8 @@
         "vignette": 0
     },
     "train": {
-        "train_p": 0.9,
+        "train_ratio": 0.95,
+        "pos_ratio": 0.9,
         "batch_size": 256,
         "num_epochs": 20,
         "num_workers": 8
