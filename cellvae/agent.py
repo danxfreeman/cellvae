@@ -74,7 +74,7 @@ class CellAgent:
         with torch.no_grad():
             for idx, (x, y) in enumerate(self.loader.valid_loader):
                 y_pred = self.model(x)
-                loss = torch.nn.MSELoss()(y_pred, y)
+                loss = self.loss(y_pred, y)
                 self.valid_loss += loss.item()
                 if idx % 100 == 0:
                     logging.info(f'Validating batch {idx} of {len(self.loader.valid_loader)}')
