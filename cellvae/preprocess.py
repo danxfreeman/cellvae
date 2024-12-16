@@ -30,7 +30,7 @@ class ImageCropper:
         """Crop cells and save indices."""
         os.makedirs(self.config.data.thumbnails, exist_ok=True)
         self.crop_cells()
-        np.save(f'data/cropped.npy', np.array(self.indices))
+        np.save('data/cropped.npy', np.array(self.indices))
     
     def crop_cells(self):
         """Crop cells."""
@@ -46,8 +46,8 @@ class ImageCropper:
         ystart = ycenter - expand
         xend = xstart + self.crop_size
         yend = ystart + self.crop_size
-        if xstart >= 0 and ystart >= 0 and xend <= self.img.shape[1] and yend <= self.img.shape[2]:
             thumbnail = self.img[:, ystart:yend, xstart:xend]
+        if xstart >= 0 and ystart >= 0 and xend <= self.img.shape[2] and yend <= self.img.shape[1]:
             tiff.imwrite(f'{self.config.data.thumbnails}/cell_{self.cropped}.tif', data=thumbnail)
             self.indices.append(idx)
             self.cropped += 1
