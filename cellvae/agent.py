@@ -4,6 +4,7 @@ import torch
 import pandas as pd
 
 from datetime import datetime
+from tqdm import tqdm
 
 from cellvae.model import CellCNN
 
@@ -20,6 +21,7 @@ class CellAgent:
         self.load_checkpoint()
 
     def load_checkpoint(self):
+        """Load checkpoint if available."""
         logging.info('Looking for checkpoint file...')
         try:
             checkpoint = torch.load('logs/checkpoint.pth.tar')
@@ -31,6 +33,7 @@ class CellAgent:
             logging.info('No checkpoint found. Creating new model.')
     
     def save_checkpoint(self):
+        """Save checkpoint."""
         state = {
             'epoch': self.current_epoch,
             'model': self.model.state_dict(),
@@ -44,6 +47,8 @@ class CellAgent:
             self.train()
         except KeyboardInterrupt:
             logging.info('Process interrupted. Exiting.')
+        finally:
+            logging.info('Processing complete.')
 
     def train(self):
         """Train model."""
@@ -56,6 +61,7 @@ class CellAgent:
             self.current_epoch += 1
     
     def train_one_epoch(self):
+        """Train one epoch."""
         self.train_loss = 0
         self.model.train()
         for idx, (x, y) in enumerate(self.loader.train_loader):
@@ -69,6 +75,7 @@ class CellAgent:
                 logging.info(f'Training batch {idx} of {len(self.loader.train_loader)}')
     
     def validate(self):
+        """Measure validation loss."""
         self.valid_loss = 0
         self.model.eval()
         with torch.no_grad():
@@ -79,7 +86,16 @@ class CellAgent:
                 if idx % 100 == 0:
                     logging.info(f'Validating batch {idx} of {len(self.loader.valid_loader)}')
     
+    def predict(self):
+        """Classify validation set."""
+        self.model.eval()
+        with torch.no_grad():
+            for x, _ in tqdm(self.loader.valid_loader, desc='Predicting'):
+                for y_pred in self.model(x):
+                    yield y_pred.item()
+
     def save_loss(self):
+        """Save loss to CSV."""
         log = pd.DataFrame([{
             'time': str(datetime.now()),
             'epoch': self.current_epoch,
