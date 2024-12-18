@@ -1,3 +1,4 @@
+import json
 import logging
 
 import torch
@@ -19,12 +20,14 @@ class CellAgent:
         self.loss = torch.nn.BCELoss()
         self.current_epoch = 0
         self.load_checkpoint()
+        logging.info(f'Config\n{json.dumps(self.config, indent=4)}')
+        logging.info(f'Model\n{self.model}')
 
     def load_checkpoint(self):
         """Load checkpoint if available."""
         logging.info('Looking for checkpoint file...')
         try:
-            checkpoint = torch.load('logs/checkpoint.pth.tar')
+            checkpoint = torch.load('data/checkpoint.pth.tar')
             self.current_epoch = checkpoint['epoch']
             self.model.load_state_dict(checkpoint['model'])
             self.opt.load_state_dict(checkpoint['optimizer'])
