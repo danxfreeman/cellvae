@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import tifffile as tiff
 
-from torch.utils.data import DataLoader, Dataset, Subset, WeightedRandomSampler
+from torch.utils.data import DataLoader, Dataset, Subset
 
 from cellvae.preprocess import ImageCropper, Vignette
 
@@ -81,24 +81,9 @@ class CellLoader:
         """Load dataset into DataLoader."""
         if len(dataset) == 0:
             return None
-        sample_weights = self.weigh_samples(dataset)
-        sampler = WeightedRandomSampler(
-            weights=sample_weights,
-            num_samples=len(sample_weights),
-            replacement=True
-        )
         return DataLoader(
             dataset,
-            sampler=sampler,
+            shuffle=True,
             batch_size=self.config.train.batch_size,
             num_workers=self.config.train.num_workers
         )
-    
-    def weigh_samples(self, dataset):
-        """Balance batch class composition."""
-        subset = dataset.indices
-        labels = dataset.dataset.labels[subset].flatten().long()
-        class_counts = torch.bincount(labels)
-        pos_ratio = self.config.train.pos_ratio
-        class_ratio = torch.tensor([1 - pos_ratio, pos_ratio])
-        return (class_ratio / class_counts)[labels]

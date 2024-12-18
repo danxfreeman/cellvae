@@ -21,8 +21,7 @@ class CellCNN(nn.Module):
         self.fc_layers = nn.Sequential(
             nn.Linear(fc_input, 128),
             nn.ReLU(),
-            nn.Linear(128, 1),
-            nn.Sigmoid()
+            nn.Linear(128, 1)
         )
     
     def forward(self, x):

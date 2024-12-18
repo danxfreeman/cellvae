@@ -4,6 +4,7 @@ import logging
 import torch
 import pandas as pd
 
+from torchmetrics.classification import BinaryAUROC
 from datetime import datetime
 from tqdm import tqdm
 
@@ -17,7 +18,7 @@ class CellAgent:
         torch.manual_seed(self.config.model.seed)
         self.model = CellCNN(self.config)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
-        self.loss = torch.nn.BCELoss()
+        self.loss = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor([self.config.train.pos_weight]))
         self.current_epoch = 0
         self.load_checkpoint()
         logging.info(f'Config\n{json.dumps(self.config, indent=4)}')

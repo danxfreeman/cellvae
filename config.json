@@ -12,7 +12,7 @@
     },
     "train": {
         "train_ratio": 0.95,
-        "pos_ratio": 0.9,
+        "pos_weight": 50,
         "batch_size": 256,
         "num_epochs": 20,
         "num_workers": 8
