@@ -32,8 +32,7 @@ class CellDataset(Dataset):
         """Load labels."""
         labels = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_labels)
         labels = labels.to_numpy()
-        cropped = np.load('data/cropped.npy')
-        self.labels = torch.tensor(labels[cropped], dtype=torch.float32)
+        self.labels = torch.tensor(labels, dtype=torch.float32)
 
     def __len__(self):
         return len(self.labels)
