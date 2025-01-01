@@ -1,47 +1,4 @@
-import os
-import logging
-
 import numpy as np
-import pandas as pd
-import tifffile as tiff
-
-class ImageCropper:
-
-    def __init__(self, config):
-        self.config = config
-        self.crop_size = self.config.preprocess.crop_size
-        self.load_image()
-        self.load_centroids()
-        self.total = len(self.csv)
-
-    def load_image(self):
-        """Load TIFF image."""
-        self.img = tiff.imread(self.config.data.img)
-    
-    def load_centroids(self):
-        """Load cell coordinates."""
-        self.csv = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_xy)
-        self.csv = self.csv.to_numpy(dtype='int')
-    
-    def crop(self):
-        """Crop cells."""
-        os.makedirs(self.config.data.thumbnails, exist_ok=True)
-        for idx, (xcenter, ycenter) in enumerate(self.csv):
-            self.crop_one_cell(idx, xcenter, ycenter)
-            if idx % 100 == 0:
-                logging.info(f'Cropping cell {idx} of {self.total}.')
-    
-    def crop_one_cell(self, idx, xcenter, ycenter):
-        """Crop one cell."""
-        expand = self.crop_size // 2
-        xstart = xcenter - expand
-        ystart = ycenter - expand
-        xend = xstart + self.crop_size
-        yend = ystart + self.crop_size
-        thumbnail = self.img[:, ystart:yend, xstart:xend] / 255
-        if thumbnail.shape != (3, self.crop_size, self.crop_size):
-            thumbnail = np.zeros((3, self.crop_size, self.crop_size))
-        tiff.imwrite(f'{self.config.data.thumbnails}/cell_{idx}.tif', data=thumbnail)
 
 class Vignette:
 

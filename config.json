@@ -1,10 +1,9 @@
 {
     "data": {
-        "img": "/n/scratch/users/d/daf179/melanoma/LSP13076/vHE_LSP13076_pyramid.ome.tif",
-        "csv": "/n/scratch/users/d/daf179/melanoma/LSP13076/mitosis.csv",
+        "img": "/n/scratch/users/d/daf179/melanoma/LSP26239_postHE_reg.ome.tif",
+        "csv": "/n/scratch/users/d/daf179/melanoma/ML/mitosis.csv",
         "csv_xy": ["X_centroid", "Y_centroid"],
-        "csv_labels": ["mitotic"],
-        "thumbnails": "/n/scratch/users/d/daf179/melanoma/LSP13076/thumbnails"
+        "csv_labels": ["mitosis"],
     },
     "preprocess": {
         "crop_size": 14,

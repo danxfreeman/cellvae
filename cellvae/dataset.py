@@ -1,4 +1,3 @@
-import os
 import logging
 
 import torch
@@ -8,40 +7,48 @@ import tifffile as tiff
 
 from torch.utils.data import DataLoader, Dataset, Subset
 
-from cellvae.preprocess import ImageCropper, Vignette
-
 class CellDataset(Dataset):
 
     def __init__(self, config):
         self.config = config
-        self.vignette = Vignette(self.config)
-        self.load_thumbnails()
+        self.offset = self.config.preprocess.crop_size // 2
+        self.load_image()
         self.load_labels()
-    
-    def load_thumbnails(self):
-        """Load or create thumbnails."""
-        logging.info('Checking for thumbnails...')
-        if os.path.exists(self.config.data.thumbnails):
-            logging.info('Thumbnails loaded.')
-        else:
-            logging.info('Creating thumbnails.')
-            cropper = ImageCropper(self.config)
-            cropper.crop()
-    
+        self.filter_labels()
+
+    def load_image(self):
+        """Load image."""
+        self.img = tiff.imread(self.config.data.img).astype('float32')
+        self.img /= 255
+
     def load_labels(self):
-        """Load labels."""
-        labels = pd.read_csv(self.config.data.csv, usecols=self.config.data.csv_labels)
-        labels = labels.to_numpy()
-        self.labels = torch.tensor(labels, dtype=torch.float32)
+        """Load cell information."""
+        csv = pd.read_csv(self.config.data.csv)
+        labels = csv[self.config.data.csv_labels].to_numpy()
+        self.labels = torch.from_numpy(labels).float()
+        self.loc = csv[self.config.data.csv_xy].to_numpy(dtype=np.uint16)
+    
+    def filter_labels(self):
+        """Filter cells near image boundaries."""
+        _, img_height, img_width = self.img.shape
+        inbound = (
+            (self.loc[:, 0] > self.offset) &
+            (self.loc[:, 0] < img_width - self.offset) &
+            (self.loc[:, 1] > self.offset) &
+            (self.loc[:, 1] < img_height - self.offset)
+        )
+        self.loc = self.loc[inbound]
+        self.labels = self.labels[inbound]
 
     def __len__(self):
         return len(self.labels)
     
     def __getitem__(self, idx):
-        path = f'{self.config.data.thumbnails}/cell_{idx}.tif'
-        thumbnail = tiff.imread(path)
-        thumbnail = self.vignette(thumbnail)
-        return torch.Tensor(thumbnail), self.labels[idx]
+        xcenter, ycenter = self.loc[idx]
+        xstart, xend = xcenter - offset, xcenter + offset
+        ystart, yend = ycenter - offset, ycenter + offset
+        thumbnail = self.img[:, ystart:yend, xstart:xend]
+        return torch.from_numpy(thumbnail), self.labels[idx]
 
 class CellLoader:
 
