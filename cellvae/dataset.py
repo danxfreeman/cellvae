@@ -55,19 +55,19 @@ class CellLoader:
         """Load or create train/test split indices."""
         logging.info('Checking for train/test split...')
         try:
-            self.train_idx = np.load('data/train_idx.npy')
+            self.valid_idx = np.load('data/valid_idx.npy')
             logging.info('Split loaded.')
         except FileNotFoundError:
             logging.info('Creating new split.')
             self.create_split()
-        self.valid_idx = np.setdiff1d(np.arange(len(self.dataset)), self.train_idx)
+        self.train_idx = np.setdiff1d(np.arange(len(self.dataset)), self.valid_idx)
 
     def create_split(self):
         """Create train/test split indices."""
-        train_size = int(self.config.train.train_ratio * len(self.dataset))
-        idx = np.arange(len(self.dataset))
-        self.train_idx = np.random.choice(idx, train_size, replace=False)
-        np.save('data/train_idx.npy', self.train_idx)
+        valid_ratio = 1 - self.config.train.train_ratio
+        valid_size = int(valid_ratio * len(self.dataset))
+        self.valid_idx = np.random.choice(len(self.dataset), size=valid_size, replace=False)
+        np.save('data/valid_idx.npy', self.valid_idx)
     
     def apply_split(self):
         """Apply train/test split indices."""
