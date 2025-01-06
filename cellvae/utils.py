@@ -9,11 +9,15 @@ def load_config(config_path='config.json'):
         config_dict = json.load(f)
         return EasyDict(config_dict)
 
-def init_log():
+def init_log(log_file='data/experiment.log'):
     """Initialize log file."""
     logging.basicConfig(
         level=logging.INFO,
         format='[%(asctime)s] %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %I:%M:%S %p'
+        datefmt='%Y-%m-%d %I:%M:%S %p',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
     )
     logging.info('***Initializing experiment***')
