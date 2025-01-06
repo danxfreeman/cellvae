@@ -74,14 +74,18 @@ class CellLoader:
         except FileNotFoundError:
             logging.info('Creating new split.')
             self.create_split()
+            np.save('data/valid_idx.npy', self.valid_idx)
         self.train_idx = np.setdiff1d(np.arange(len(self.dataset)), self.valid_idx)
 
     def create_split(self):
-        """Create train/test split indices."""
+        """Create balanced train/test split indices."""
         valid_ratio = 1 - self.config.train.train_ratio
-        valid_size = int(valid_ratio * len(self.dataset))
-        self.valid_idx = np.random.choice(len(self.dataset), size=valid_size, replace=False)
-        np.save('data/valid_idx.npy', self.valid_idx)
+        valid_idx = []
+        for label in [0, 1]:
+            class_idx = np.where(self.dataset.csv.label == label)[0]
+            valid_size = int(len(class_idx) * valid_ratio)
+            valid_idx.append(np.random.choice(class_idx, valid_size, replace=False))
+        self.valid_idx = np.random.permutation(np.concatenate(valid_idx))
     
     def apply_split(self):
         """Apply train/test split indices."""
