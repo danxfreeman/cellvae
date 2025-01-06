@@ -7,10 +7,10 @@ class CellCNN(nn.Module):
         super().__init__()
         self.config = config
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=1, padding=0),
+            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=5, stride=2, padding=0),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=0),
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=2, padding=0),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Flatten()
