@@ -46,11 +46,16 @@ class CellDataset(Dataset):
         return len(self.csv)
     
     def __getitem__(self, idx):
-        xcenter, ycenter = self.loc[idx]
+        thumbnail = self.crop(idx)
+        label = self.csv.at[idx, 'label']
+        return torch.from_numpy(thumbnail), torch.tensor([label])
+
+    def crop(self, idx, window=None):
+        offset = (window // 2) if window else self.offset
+        xcenter, ycenter = self.csv.at[idx, 'x'], self.csv.at[idx, 'y']
         xstart, xend = xcenter - offset, xcenter + offset
         ystart, yend = ycenter - offset, ycenter + offset
-        thumbnail = self.img[:, ystart:yend, xstart:xend]
-        return torch.from_numpy(thumbnail), self.csv.at[idx, 'label']
+        return self.img[:, ystart:yend, xstart:xend]
 
 class CellLoader:
 
