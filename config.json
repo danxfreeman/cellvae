@@ -2,6 +2,7 @@
     "data": {
         "img": "/n/scratch/users/d/daf179/melanoma/LSP26239_postHE_reg.ome.tif",
         "csv": "/n/scratch/users/d/daf179/melanoma/ML/mitosis.csv",
+        "csv_id": ["CellID"],
         "csv_xy": ["X_centroid", "Y_centroid"],
         "csv_labels": ["mitosis"],
     },

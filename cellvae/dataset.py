@@ -23,32 +23,34 @@ class CellDataset(Dataset):
 
     def load_labels(self):
         """Load cell information."""
-        csv = pd.read_csv(self.config.data.csv)
-        labels = csv[self.config.data.csv_labels].to_numpy()
-        self.labels = torch.from_numpy(labels).float()
-        self.loc = csv[self.config.data.csv_xy].to_numpy(dtype=np.uint16)
+        cols = {
+            self.config.data.csv_id[0]: 'id',
+            self.config.data.csv_xy[0]: 'x',
+            self.config.data.csv_xy[1]: 'y',
+            self.config.data.csv_labels[0]: 'label'
+        }
+        self.csv = pd.read_csv(self.config.data.csv, usecols=cols.keys()).rename(columns=cols)
+        self.csv.label = self.csv.label.astype(np.float32)
     
     def filter_labels(self):
         """Filter cells near image boundaries."""
         _, img_height, img_width = self.img.shape
-        inbound = (
-            (self.loc[:, 0] > self.offset) &
-            (self.loc[:, 0] < img_width - self.offset) &
-            (self.loc[:, 1] > self.offset) &
-            (self.loc[:, 1] < img_height - self.offset)
-        )
-        self.loc = self.loc[inbound]
-        self.labels = self.labels[inbound]
+        self.csv = self.csv[
+            (self.csv.x > self.offset) &
+            (self.csv.x < img_width - self.offset) &
+            (self.csv.y > self.offset) &
+            (self.csv.y < img_height - self.offset)
+        ].reset_index(drop=True)
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.csv)
     
     def __getitem__(self, idx):
         xcenter, ycenter = self.loc[idx]
         xstart, xend = xcenter - offset, xcenter + offset
         ystart, yend = ycenter - offset, ycenter + offset
         thumbnail = self.img[:, ystart:yend, xstart:xend]
-        return torch.from_numpy(thumbnail), self.labels[idx]
+        return torch.from_numpy(thumbnail), self.csv.at[idx, 'label']
 
 class CellLoader:
 
