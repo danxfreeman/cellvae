@@ -15,6 +15,7 @@ class CellDataset(Dataset):
         self.load_image()
         self.load_labels()
         self.filter_labels()
+        self.load_embeddings()
 
     def load_image(self):
         """Load image."""
@@ -41,14 +42,25 @@ class CellDataset(Dataset):
             (self.csv.y > self.offset) &
             (self.csv.y < img_height - self.offset)
         ].reset_index(drop=True)
+    
+    def load_embeddings(self):
+        """Import patch embeddings."""
+        if self.config.data.emb:
+            patch = pd.read_csv(self.config.data.emb)
+            patch = patch.loc[patch.cell_id.isin(self.csv.id)]
+            self.csv = self.csv.set_index('id').loc[patch.cell_id].reset_index()
+            self.patch = patch.iloc[:, 1:].to_numpy(dtype=np.float32)
+        else:
+            self.patch = np.zeros((len(self.csv), 0), dtype=np.float32)
 
     def __len__(self):
         return len(self.csv)
     
     def __getitem__(self, idx):
         thumbnail = self.crop(idx)
+        patch = self.patch[idx]
         label = self.csv.at[idx, 'label']
-        return torch.from_numpy(thumbnail), torch.tensor([label])
+        return torch.from_numpy(thumbnail), torch.from_numpy(patch), torch.tensor([label])
 
     def crop(self, idx, window=None):
         offset = (window // 2) if window else self.offset

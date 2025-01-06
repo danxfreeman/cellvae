@@ -17,14 +17,15 @@ class CellCNN(nn.Module):
         )
         with torch.no_grad():
             dummy = torch.zeros(1, 3, self.config.preprocess.crop_size, self.config.preprocess.crop_size)
-            fc_input = self.conv_layers(dummy).numel()
+            fc_input = self.conv_layers(dummy).numel() + self.config.data.emb_size
         self.fc_layers = nn.Sequential(
             nn.Linear(fc_input, 128),
             nn.ReLU(),
             nn.Linear(128, 1)
         )
     
-    def forward(self, x):
+    def forward(self, x, p):
         x = self.conv_layers(x)
+        x = torch.hstack([x, p])
         x = self.fc_layers(x)
         return x

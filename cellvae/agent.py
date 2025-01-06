@@ -69,9 +69,9 @@ class CellAgent:
         self.train_loss = 0
         self.train_auc = BinaryAUROC()
         self.model.train()
-        for idx, (x, y) in enumerate(self.loader.train_loader):
+        for idx, (x, p, y) in enumerate(self.loader.train_loader):
             self.opt.zero_grad()
-            y_pred = self.model(x)
+            y_pred = self.model(x, p)
             loss = self.loss(y_pred, y)
             loss.backward()
             self.opt.step()
@@ -86,8 +86,8 @@ class CellAgent:
         self.valid_auc = BinaryAUROC()
         self.model.eval()
         with torch.no_grad():
-            for idx, (x, y) in enumerate(self.loader.valid_loader):
-                y_pred = self.model(x)
+            for idx, (x, p, y) in enumerate(self.loader.valid_loader):
+                y_pred = self.model(x, p)
                 loss = self.loss(y_pred, y)
                 self.valid_loss += loss.item()
                 self.valid_auc.update(y_pred, y)
@@ -98,9 +98,8 @@ class CellAgent:
         """Classify validation set."""
         self.model.eval()
         with torch.no_grad():
-            for x, _ in tqdm(self.loader.valid_loader, desc='Predicting'):
-                for y_pred in self.model(x):
-                    yield y_pred.item()
+            for x, p, _ in tqdm(self.loader.valid_loader, desc='Predicting'):
+                for y_pred in self.model(x, p):
 
     def save_loss(self):
         """Save loss to CSV."""
