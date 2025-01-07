@@ -7,7 +7,6 @@ import wandb
 
 from torchmetrics.classification import BinaryAUROC
 from datetime import datetime
-from tqdm import tqdm
 
 from cellvae.model import CellCNN
 
@@ -99,8 +98,11 @@ class CellAgent:
         """Classify validation set."""
         self.model.eval()
         with torch.no_grad():
-            for x, p, _ in tqdm(self.loader.valid_loader, desc='Predicting'):
-                for y_pred in self.model(x, p):
+            for i, (x, p, _) in enumerate(self.loader.valid_loader):
+                logging.info(f'Classifying batch {i} of {len(self.loader.valid_loader)}.')    
+                y_pred = self.model(x, p)
+                for y in y_pred:
+                    yield y.item()
 
     def save_loss(self):
         """Save loss to CSV."""
