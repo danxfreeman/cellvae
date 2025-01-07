@@ -3,6 +3,7 @@ import logging
 
 import torch
 import pandas as pd
+import wandb
 
 from torchmetrics.classification import BinaryAUROC
 from datetime import datetime
@@ -113,3 +114,4 @@ class CellAgent:
         }])
         save_header = self.current_epoch == 0
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
+        wandb.log(log.iloc[:, 2:].to_dict(), step=self.current_epoch)
