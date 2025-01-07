@@ -9,6 +9,8 @@ class Plot:
     def __init__(self, config, dataset=None):
         self.config = config
         self.dataset = dataset
+        self.loss_df = None
+    
     def cell(self, id_, **kwargs):
         _, ax = plt.subplots()
         self._plot_cell(ax, id_=id_, **kwargs)
@@ -47,14 +49,25 @@ class Plot:
             )
             ax.add_patch(circle)
 
+    def loss(self, metric='loss'):
+        if self.loss_df is None:
+            self.loss_df = pd.read_csv('data/loss.csv')
+            self.loss_df.epoch += 1
+        if metric == 'loss':
+            self._plot_curve(self.loss_df['train_loss'], self.loss_df['valid_loss'])
+            plt.ylim(0, None)
+            plt.ylabel('Loss')
+        else:
+            self._plot_curve(self.loss_df['train_auc'], self.loss_df['valid_auc'])
+            plt.ylim(0.5, 1)
+            plt.ylabel('AUC')
         plt.show()
-    
-    def loss(self):
-        loss = pd.read_csv('data/loss.csv')
+
+    def _plot_curve(self, y_train, y_valid):
         plt.figure(figsize=(10, 5))
-        plt.plot(loss['epoch'], loss['train_loss'], label='Train Loss', marker='o')
-        plt.plot(loss['epoch'], loss['valid_loss'], label='Validation Loss', marker='o')
+        plt.plot(self.loss_df['epoch'], y_train, label='Train', marker='o')
+        plt.plot(self.loss_df['epoch'], y_valid, label='Test', marker='o')
         plt.xlabel('Epoch')
-        plt.ylabel('Loss')
+        plt.gca().set_xlim(1, self.config.train.num_epochs)
+        plt.gca().xaxis.set_major_locator(plt.MaxNLocator(integer=True))
         plt.legend()
-        plt.show()
