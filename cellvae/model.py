@@ -21,6 +21,7 @@ class CellCNN(nn.Module):
         self.fc_layers = nn.Sequential(
             nn.Linear(fc_input, 128),
             nn.ReLU(),
+            nn.Dropout(p=self.config.model.dropout),
             nn.Linear(128, 1)
         )
     
