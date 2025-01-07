@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 
@@ -11,6 +12,7 @@ def load_config(config_path='config.json'):
 
 def init_log(log_file='data/experiment.log'):
     """Initialize log file."""
+    os.makedirs('data', exist_ok=True)
     logging.basicConfig(
         level=logging.INFO,
         format='[%(asctime)s] %(levelname)s - %(message)s',
