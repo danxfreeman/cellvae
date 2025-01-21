@@ -32,7 +32,10 @@ class Plot:
     
     def _plot_cell(self, ax, id_, window=None, outline=False):
         window = window or self.config.preprocess.crop_size
-        idx = self.dataset.csv.index[self.dataset.csv.id == id_][0]
+        try:
+            idx = self.dataset.csv.index[self.dataset.csv.id == id_][0]
+        except IndexError:
+            raise ValueError(f'Cell ID {id_} does not exist.')
         x = self.dataset.crop(idx, window=window)
         x = x.transpose(1, 2, 0)
         ax.imshow(x)
