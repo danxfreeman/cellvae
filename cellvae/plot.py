@@ -30,7 +30,7 @@ class Plot:
         plt.tight_layout()
         plt.show()
     
-    def _plot_cell(self, ax, id_, window=None, outline=False):
+    def _plot_cell(self, ax, id_, window=None, outline=0):
         window = window or self.config.preprocess.crop_size
         try:
             idx = self.dataset.csv.index[self.dataset.csv.id == id_][0]
@@ -43,7 +43,7 @@ class Plot:
         if outline:
             circle = Circle(
                 (window / 2, window / 2),
-                radius = self.config.preprocess.crop_size / 2,
+                radius = outline / 2,
                 edgecolor='white',
                 facecolor='none',
                 linewidth=3,
