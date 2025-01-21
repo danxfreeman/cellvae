@@ -52,10 +52,9 @@ class Plot:
             )
             ax.add_patch(circle)
 
-    def loss(self, metric='loss'):
-        if self.loss_df is None:
-            self.loss_df = pd.read_csv('data/loss.csv')
-            self.loss_df.epoch += 1
+    def loss(self, metric='loss', path=None):
+        self.loss_df = pd.read_csv(path or 'data/loss.csv')
+        self.loss_df.epoch += 1
         if metric == 'loss':
             self._plot_curve(self.loss_df['train_loss'], self.loss_df['valid_loss'])
             plt.ylim(0, None)
