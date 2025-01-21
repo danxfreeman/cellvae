@@ -4,6 +4,7 @@ import torch
 import numpy as np
 import pandas as pd
 import tifffile as tiff
+import zarr
 
 from torch.utils.data import DataLoader, Dataset, Subset
 
@@ -19,8 +20,12 @@ class CellDataset(Dataset):
 
     def load_image(self):
         """Load image."""
-        self.img = tiff.imread(self.config.data.img).astype('float32')
-        self.img /= 255
+        if self.config.data.inmemory:
+            img = tiff.imread(self.config.data.img)
+            self.img = self.transform(img)
+        else:
+            store = tiff.imread(self.config.data.img, aszarr=True)
+            self.img = zarr.open(store, mode='r')[0]
 
     def load_labels(self):
         """Load cell information."""
@@ -58,6 +63,7 @@ class CellDataset(Dataset):
     
     def __getitem__(self, idx):
         x = self.crop(idx)
+        x = x if self.config.data.inmemory else self.transform(x)
         emb = self.emb[idx]
         lab = self.csv.at[idx, 'label']
         return torch.from_numpy(x), torch.from_numpy(emb), torch.tensor([lab])
@@ -69,6 +75,10 @@ class CellDataset(Dataset):
         xstart, xend = xcenter - offset, xcenter + offset
         ystart, yend = ycenter - offset, ycenter + offset
         return self.img[:, ystart:yend, xstart:xend]
+
+    def transform(self, img):
+        """Transform image or patch."""
+        return img.astype('float32') / 255
 
 class CellLoader:
 
