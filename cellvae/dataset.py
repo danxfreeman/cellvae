@@ -46,23 +46,24 @@ class CellDataset(Dataset):
     def load_embeddings(self):
         """Import patch embeddings."""
         if self.config.data.emb:
-            patch = pd.read_csv(self.config.data.emb)
-            patch = patch.loc[patch.cell_id.isin(self.csv.id)]
-            self.csv = self.csv.set_index('id').loc[patch.cell_id].reset_index()
-            self.patch = patch.iloc[:, 1:].to_numpy(dtype=np.float32)
+            emb = pd.read_csv(self.config.data.emb)
+            emb = emb.loc[emb.cell_id.isin(self.csv.id)]
+            self.csv = self.csv.set_index('id').loc[emb.cell_id].reset_index()
+            self.emb = emb.iloc[:, 1:].to_numpy(dtype=np.float32)
         else:
-            self.patch = np.zeros((len(self.csv), 0), dtype=np.float32)
+            self.emb = np.zeros((len(self.csv), 0), dtype=np.float32)
 
     def __len__(self):
         return len(self.csv)
     
     def __getitem__(self, idx):
-        thumbnail = self.crop(idx)
-        patch = self.patch[idx]
-        label = self.csv.at[idx, 'label']
-        return torch.from_numpy(thumbnail), torch.from_numpy(patch), torch.tensor([label])
+        x = self.crop(idx)
+        emb = self.emb[idx]
+        lab = self.csv.at[idx, 'label']
+        return torch.from_numpy(x), torch.from_numpy(emb), torch.tensor([lab])
 
     def crop(self, idx, window=None):
+        """Crop thumbnail around a cell."""
         offset = (window // 2) if window else self.offset
         xcenter, ycenter = self.csv.at[idx, 'x'], self.csv.at[idx, 'y']
         xstart, xend = xcenter - offset, xcenter + offset
