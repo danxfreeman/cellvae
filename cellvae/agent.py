@@ -16,13 +16,19 @@ class CellAgent:
         self.config = config
         self.loader = loader
         torch.manual_seed(self.config.model.seed)
-        self.model = CellCNN(self.config)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = CellCNN(self.config).to(self.device)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
-        self.loss = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor([self.config.train.pos_weight]))
+        self.loss = self.weighted_loss()
         self.current_epoch = 0
         self.load_checkpoint()
         logging.info(f'Config\n{json.dumps(self.config, indent=4)}')
         logging.info(f'Model\n{self.model}')
+    
+    def weighted_loss(self):
+        """Define weighted loss function."""
+        pos_weight = torch.tensor([self.config.train.pos_weight]).to(self.device)
+        return torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
     def load_checkpoint(self):
         """Load checkpoint if available."""
@@ -71,6 +77,7 @@ class CellAgent:
         self.model.train()
         for idx, (x, p, y) in enumerate(self.loader.train_loader):
             self.opt.zero_grad()
+            x, p, y = x.to(self.device), p.to(self.device), y.to(self.device)
             y_pred = self.model(x, p)
             loss = self.loss(y_pred, y)
             loss.backward()
@@ -87,6 +94,7 @@ class CellAgent:
         self.model.eval()
         with torch.no_grad():
             for idx, (x, p, y) in enumerate(self.loader.valid_loader):
+                x, p, y = x.to(self.device), p.to(self.device), y.to(self.device)
                 y_pred = self.model(x, p)
                 loss = self.loss(y_pred, y)
                 self.valid_loss += loss.item()
