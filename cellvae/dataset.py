@@ -13,10 +13,18 @@ class CellDataset(Dataset):
     def __init__(self, config):
         self.config = config
         self.offset = self.config.preprocess.crop_size // 2
+        self.load_data()
+    
+    def load_data(self):
+        """Load dataset."""
+        logging.info('Loading image...')
         self.load_image()
+        logging.info('Loading labels...')
         self.load_labels()
         self.filter_labels()
+        logging.info('Loading embeddings...')
         self.load_embeddings()
+        logging.info('Loaded.')
 
     def load_image(self):
         """Load image."""
