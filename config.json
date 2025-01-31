@@ -6,6 +6,7 @@
         "csv_xy": ["X_centroid", "Y_centroid"],
         "csv_labels": ["mitosis"],
         "emb": null,
+        "use_emb": false,
         "emb_size": 0,
         "inmemory": false
     },

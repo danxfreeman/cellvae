@@ -58,7 +58,7 @@ class CellDataset(Dataset):
     
     def load_embeddings(self):
         """Import patch embeddings."""
-        if self.config.data.emb:
+        if self.config.data.use_emb:
             emb = pd.read_csv(self.config.data.emb)
             emb = emb.loc[emb.cell_id.isin(self.csv.id)]
             self.csv = self.csv.set_index('id').loc[emb.cell_id].reset_index()
