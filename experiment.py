@@ -9,6 +9,7 @@ def init_wanb(config):
         project='CellCNN',
         name='dropout',
         notes='set dropout to 0.5',
+        mode="disabled",
         config=config
     )
 

@@ -58,7 +58,7 @@ class CellDataset(Dataset):
     
     def load_embeddings(self):
         """Import patch embeddings."""
-        if self.config.data.use_emb:
+        if self.config.data.emb_use
             emb = pd.read_csv(self.config.data.emb)
             emb = emb.loc[emb.cell_id.isin(self.csv.id)]
             self.csv = self.csv.set_index('id').loc[emb.cell_id].reset_index()
@@ -98,7 +98,6 @@ class CellLoader:
     
     def load_split(self):
         """Load or create train/test split indices."""
-        logging.info('Checking for train/test split...')
         try:
             self.valid_idx = np.load('data/valid_idx.npy')
             logging.info('Split loaded.')
