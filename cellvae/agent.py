@@ -75,10 +75,10 @@ class CellAgent:
         self.train_loss = 0
         self.train_auc = BinaryAUROC()
         self.model.train()
-        for idx, (x, p, y) in enumerate(self.loader.train_loader):
+        for idx, (x, y) in enumerate(self.loader.train_loader):
             self.opt.zero_grad()
-            x, p, y = x.to(self.device), p.to(self.device), y.to(self.device)
-            y_pred = self.model(x, p)
+            x, y = x.to(self.device), y.to(self.device)
+            y_pred = self.model(x)
             loss = self.loss(y_pred, y)
             loss.backward()
             self.opt.step()
@@ -93,9 +93,9 @@ class CellAgent:
         self.valid_auc = BinaryAUROC()
         self.model.eval()
         with torch.no_grad():
-            for idx, (x, p, y) in enumerate(self.loader.valid_loader):
-                x, p, y = x.to(self.device), p.to(self.device), y.to(self.device)
-                y_pred = self.model(x, p)
+            for idx, (x, y) in enumerate(self.loader.valid_loader):
+                x, y = x.to(self.device), y.to(self.device)
+                y_pred = self.model(x)
                 loss = self.loss(y_pred, y)
                 self.valid_loss += loss.item()
                 self.valid_auc.update(y_pred, y)
@@ -106,9 +106,9 @@ class CellAgent:
         """Classify validation set."""
         self.model.eval()
         with torch.no_grad():
-            for i, (x, p, _) in enumerate(self.loader.valid_loader):
+            for i, (x, _) in enumerate(self.loader.valid_loader):
                 logging.info(f'Classifying batch {i} of {len(self.loader.valid_loader)}.')    
-                y_pred = self.model(x, p)
+                y_pred = self.model(x)
                 for y in y_pred:
                     yield y.item()
 

@@ -22,8 +22,6 @@ class CellDataset(Dataset):
         logging.info('Loading labels...')
         self.load_labels()
         self.filter_labels()
-        logging.info('Loading embeddings...')
-        self.load_embeddings()
         logging.info('Loaded.')
 
     def load_image(self):
@@ -55,16 +53,6 @@ class CellDataset(Dataset):
             (self.csv.y > self.offset) &
             (self.csv.y < img_height - self.offset)
         ].reset_index(drop=True)
-    
-    def load_embeddings(self):
-        """Import patch embeddings."""
-        if self.config.data.emb_use
-            emb = pd.read_csv(self.config.data.emb)
-            emb = emb.loc[emb.cell_id.isin(self.csv.id)]
-            self.csv = self.csv.set_index('id').loc[emb.cell_id].reset_index()
-            self.emb = emb.iloc[:, 1:].to_numpy(dtype=np.float32)
-        else:
-            self.emb = np.zeros((len(self.csv), 0), dtype=np.float32)
 
     def __len__(self):
         return len(self.csv)
@@ -72,9 +60,8 @@ class CellDataset(Dataset):
     def __getitem__(self, idx):
         x = self.crop(idx)
         x = x if self.config.data.inmemory else self.transform(x)
-        emb = self.emb[idx]
         lab = self.csv.at[idx, 'label']
-        return torch.from_numpy(x), torch.from_numpy(emb), torch.tensor([lab])
+        return torch.from_numpy(x), torch.tensor([lab])
 
     def crop(self, idx, window=None):
         """Crop thumbnail around a cell."""

@@ -2,12 +2,9 @@
     "data": {
         "img": "",
         "csv": "",
-        "emb": "",
         "csv_id": ["CellID"],
         "csv_xy": ["X_centroid", "Y_centroid"],
         "csv_labels": ["mitosis"],
-        "emb_use": false,
-        "emb_size": 1024,
         "inmemory": true
     },
     "preprocess": {
