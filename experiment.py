@@ -6,9 +6,9 @@ from cellvae.agent import CellAgent
 
 def init_wanb(config):
     wandb.init(
-        project='CellCNN',
-        name='dropout',
-        notes='set dropout to 0.5',
+        project='CellVAE',
+        name='',
+        notes='',
         mode="disabled",
         config=config
     )

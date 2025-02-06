@@ -4,7 +4,6 @@
         "csv": "",
         "csv_id": ["CellID"],
         "csv_xy": ["X_centroid", "Y_centroid"],
-        "csv_labels": ["mitosis"],
         "inmemory": true
     },
     "preprocess": {
@@ -13,14 +12,14 @@
     },
     "train": {
         "train_ratio": 0.95,
-        "pos_weight": 50,
         "batch_size": 256,
-        "num_epochs": 20,
+        "num_epochs": 200,
         "num_workers": 0
     },
     "model": {
         "seed": 123,
+        "latent_dim": 256,
         "learning_rate": 0.001,
-        "dropout": 0.5
+        "beta": 0.1
     }
 }

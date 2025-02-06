@@ -1,33 +1,64 @@
 import torch
 import torch.nn as nn
 
-class CellCNN(nn.Module):
+class CellVAE(nn.Module):
 
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.encoder = CellEncoder(config)
+        self.decoder = CellDecoder(config, self.encoder.fc_input)
+
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mu + (eps * std)
+
+    def forward(self, x):
+        mu, logvar = self.encoder(x)
+        z = self.reparameterize(mu, logvar)
+        x_hat = self.decoder(z)
+        return x_hat, mu, logvar
+
+class CellEncoder(nn.Module):
+    def __init__(self, config):
+        super().__init__()
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=5, stride=2, padding=0),
+            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=5, stride=2),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=2, padding=0),
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=2),
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.Flatten()
         )
         with torch.no_grad():
-            dummy = torch.zeros(1, 3, self.config.preprocess.crop_size, self.config.preprocess.crop_size)
-            emb_size = self.config.data.emb_use * self.config.data.emb_size
-            fc_input = self.conv_layers(dummy).numel() + emb_size
-        self.fc_layers = nn.Sequential(
-            nn.Linear(fc_input, 128),
-            nn.ReLU(),
-            nn.Dropout(p=self.config.model.dropout),
-            nn.Linear(128, 1)
-        )
-    
-    def forward(self, x, p):
+            dummy = torch.zeros(1, 3, config.preprocess.crop_size, config.preprocess.crop_size)
+            self.fc_input = self.conv_layers(dummy).numel()
+        self.fc_mu = nn.Linear(self.fc_input, config.model.latent_dim)
+        self.fc_logvar = nn.Linear(self.fc_input, config.model.latent_dim)
+
+    def forward(self, x):
         x = self.conv_layers(x)
-        x = torch.hstack([x, p])
-        x = self.fc_layers(x)
-        return x
+        mu = self.fc_mu(x)
+        logvar = self.fc_logvar(x)
+        return mu, logvar
+
+class CellDecoder(nn.Module):
+    def __init__(self, config, fc_dim):
+        super().__init__()
+        self.conv_dim = int((fc_dim // 32) ** 0.5)
+        self.fc_dec = nn.Linear(config.model.latent_dim, fc_dim)
+        self.conv_layers = nn.Sequential(
+            nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=5, stride=2, output_padding=1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.ConvTranspose2d(in_channels=16, out_channels=3, kernel_size=5, stride=2, output_padding=1),
+            nn.BatchNorm2d(3),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.fc_dec(x)
+        x = x.view(-1, 32, self.conv_dim, self.conv_dim)
+        return self.conv_layers(x)

@@ -2,13 +2,13 @@ import json
 import logging
 
 import torch
+import torch.nn.functional as F
 import pandas as pd
 import wandb
 
-from torchmetrics.classification import BinaryAUROC
 from datetime import datetime
 
-from cellvae.model import CellCNN
+from cellvae.model import CellVAE
 
 class CellAgent:
 
@@ -17,18 +17,12 @@ class CellAgent:
         self.loader = loader
         torch.manual_seed(self.config.model.seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = CellCNN(self.config).to(self.device)
+        self.model = CellVAE(self.config).to(self.device)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
-        self.loss = self.weighted_loss()
         self.current_epoch = 0
         self.load_checkpoint()
         logging.info(f'Config\n{json.dumps(self.config, indent=4)}')
         logging.info(f'Model\n{self.model}')
-    
-    def weighted_loss(self):
-        """Define weighted loss function."""
-        pos_weight = torch.tensor([self.config.train.pos_weight]).to(self.device)
-        return torch.nn.BCEWithLogitsLoss(pos_weight=pos_weight)
 
     def load_checkpoint(self):
         """Load checkpoint if available."""
@@ -72,55 +66,68 @@ class CellAgent:
     
     def train_one_epoch(self):
         """Train one epoch."""
-        self.train_loss = 0
-        self.train_auc = BinaryAUROC()
+        self.train_mse_loss = 0
+        self.train_kld_loss = 0
+        self.train_sum_loss = 0
         self.model.train()
-        for idx, (x, y) in enumerate(self.loader.train_loader):
+        for idx, x in enumerate(self.loader.train_loader):
             self.opt.zero_grad()
-            x, y = x.to(self.device), y.to(self.device)
-            y_pred = self.model(x)
-            loss = self.loss(y_pred, y)
-            loss.backward()
+            x = x.to(self.device)
+            x_hat, mu, logvar = self.model(x)
+            mse_loss, kld_loss, sum_loss = self.loss(x, x_hat, mu, logvar)
+            sum_loss.backward()
             self.opt.step()
-            self.train_loss += loss.item()
-            self.train_auc.update(y_pred, y)
+            self.train_mse_loss += mse_loss.item()
+            self.train_kld_loss += kld_loss.item()
+            self.train_sum_loss += sum_loss.item()
             if idx % 100 == 0:
-                logging.info(f'Training batch {idx} of {len(self.loader.train_loader)}')
-    
+                logging.info(f'Training batch {idx} of {len(self.loader.train_loader)}.')
+
     def validate(self):
-        """Measure validation loss."""
-        self.valid_loss = 0
-        self.valid_auc = BinaryAUROC()
+        """Evaluate model."""
+        self.valid_mse_loss = 0
+        self.valid_kld_loss = 0
+        self.valid_sum_loss = 0
         self.model.eval()
         with torch.no_grad():
-            for idx, (x, y) in enumerate(self.loader.valid_loader):
-                x, y = x.to(self.device), y.to(self.device)
-                y_pred = self.model(x)
-                loss = self.loss(y_pred, y)
-                self.valid_loss += loss.item()
-                self.valid_auc.update(y_pred, y)
+            for idx, x in enumerate(self.loader.valid_loader):
+                x = x.to(self.device)
+                x_hat, mu, logvar = self.model(x)
+                mse_loss, kld_loss, sum_loss = self.loss(x, x_hat, mu, logvar)
+                self.valid_mse_loss += mse_loss.item()
+                self.valid_kld_loss += kld_loss.item()
+                self.valid_sum_loss += sum_loss.item()
                 if idx % 100 == 0:
-                    logging.info(f'Validating batch {idx} of {len(self.loader.valid_loader)}')
-    
-    def predict(self):
-        """Classify validation set."""
+                    logging.info(f'Validating batch {idx} of {len(self.loader.valid_loader)}.')
+
+    def loss(self, x, x_hat, mu, logvar):
+        """Calculate loss."""
+        mse_loss = F.mse_loss(x_hat, x)
+        kld_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
+        sum_loss = mse_loss + (kld_loss * self.config.model.beta)
+        return mse_loss, kld_loss, sum_loss
+
+    def embed(self):
+        """Embed validation set."""
         self.model.eval()
         with torch.no_grad():
-            for i, (x, _) in enumerate(self.loader.valid_loader):
-                logging.info(f'Classifying batch {i} of {len(self.loader.valid_loader)}.')    
-                y_pred = self.model(x)
-                for y in y_pred:
-                    yield y.item()
+            for i, x in enumerate(self.loader.valid_loader):
+                logging.info(f'Embedding batch {i} of {len(self.loader.valid_loader)}.')    
+                x_hat_batch, z_batch, _ = self.model(x)
+                for x_hat, z in zip(x_hat_batch, z_batch):
+                    yield x_hat, z
 
     def save_loss(self):
         """Save loss to CSV."""
         log = pd.DataFrame([{
             'time': str(datetime.now()),
             'epoch': self.current_epoch,
-            'train_loss': self.train_loss / len(self.loader.train_set),
-            'valid_loss': self.valid_loss / len(self.loader.valid_set),
-            'train_auc': self.train_auc.compute().item(),
-            'valid_auc': self.valid_auc.compute().item()
+            'train_bce_loss': self.train_bce_loss / len(self.loader.train_set),
+            'train_kld_loss': self.train_kld_loss / len(self.loader.train_set),
+            'train_sum_loss': self.train_sum_loss / len(self.loader.train_set),
+            'valid_bce_loss': self.valid_bce_loss / len(self.loader.valid_set),
+            'valid_kld_loss': self.valid_kld_loss / len(self.loader.valid_set),
+            'valid_sum_loss': self.valid_sum_loss / len(self.loader.valid_set),
         }])
         save_header = self.current_epoch == 0
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
