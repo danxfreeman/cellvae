@@ -107,7 +107,7 @@ class CellLoader:
     def load_dataset(self, dataset):
         """Load dataset into DataLoader."""
         if len(dataset) == 0:
-            return None
+            return []
         return DataLoader(
             dataset,
             shuffle=True,

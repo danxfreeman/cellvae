@@ -122,12 +122,12 @@ class CellAgent:
         log = pd.DataFrame([{
             'time': str(datetime.now()),
             'epoch': self.current_epoch,
-            'train_bce_loss': self.train_bce_loss / len(self.loader.train_set),
-            'train_kld_loss': self.train_kld_loss / len(self.loader.train_set),
-            'train_sum_loss': self.train_sum_loss / len(self.loader.train_set),
-            'valid_bce_loss': self.valid_bce_loss / len(self.loader.valid_set),
-            'valid_kld_loss': self.valid_kld_loss / len(self.loader.valid_set),
-            'valid_sum_loss': self.valid_sum_loss / len(self.loader.valid_set),
+            'train_mse_loss': self.train_mse_loss / max(len(self.loader.train_set), 1),
+            'train_kld_loss': self.train_kld_loss / max(len(self.loader.train_set), 1),
+            'train_sum_loss': self.train_sum_loss / max(len(self.loader.train_set), 1),
+            'valid_mse_loss': self.valid_mse_loss / max(len(self.loader.valid_set), 1),
+            'valid_kld_loss': self.valid_kld_loss / max(len(self.loader.valid_set), 1),
+            'valid_sum_loss': self.valid_sum_loss / max(len(self.loader.valid_set), 1),
         }])
         save_header = self.current_epoch == 1
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
