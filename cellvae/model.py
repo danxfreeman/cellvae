@@ -24,11 +24,11 @@ class CellEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=16, kernel_size=5, stride=2),
-            nn.BatchNorm2d(16),
+            nn.Conv2d(in_channels=3, out_channels=16, stride=2, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=5, stride=2),
-            nn.BatchNorm2d(32),
+            nn.Conv2d(in_channels=16, out_channels=32, stride=2, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(in_channels=32, out_channels=64, stride=2, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Flatten()
         )
@@ -47,18 +47,18 @@ class CellEncoder(nn.Module):
 class CellDecoder(nn.Module):
     def __init__(self, config, fc_dim):
         super().__init__()
-        self.conv_dim = int((fc_dim // 32) ** 0.5)
+        self.conv_dim = int((fc_dim // 64) ** 0.5)
         self.fc_dec = nn.Linear(config.model.latent_dim, fc_dim)
         self.conv_layers = nn.Sequential(
-            nn.ConvTranspose2d(in_channels=32, out_channels=16, kernel_size=5, stride=2, output_padding=1),
-            nn.BatchNorm2d(16),
+            nn.ConvTranspose2d(in_channels=64, out_channels=32, stride=2, kernel_size=3, padding=1, output_padding=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(in_channels=16, out_channels=3, kernel_size=5, stride=2, output_padding=1),
-            nn.BatchNorm2d(3),
+            nn.ConvTranspose2d(in_channels=32, out_channels=16, stride=2, kernel_size=3, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(in_channels=16, out_channels=3, stride=2, kernel_size=3, padding=1, output_padding=1),
             nn.Sigmoid()
         )
 
     def forward(self, x):
         x = self.fc_dec(x)
-        x = x.view(-1, 32, self.conv_dim, self.conv_dim)
+        x = x.view(-1, 64, self.conv_dim, self.conv_dim)
         return self.conv_layers(x)
