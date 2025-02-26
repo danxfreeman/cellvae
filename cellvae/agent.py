@@ -19,7 +19,7 @@ class CellAgent:
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = CellVAE(self.config).to(self.device)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
-        self.current_epoch = 0
+        self.current_epoch = 1
         self.load_checkpoint()
         logging.info(f'Config\n{json.dumps(self.config, indent=4)}')
         logging.info(f'Model\n{self.model}')
@@ -56,7 +56,7 @@ class CellAgent:
 
     def train(self):
         """Train model."""
-        while self.current_epoch < self.config.train.num_epochs:
+        while self.current_epoch <= self.config.train.num_epochs:
             logging.info(f'Training epoch {self.current_epoch} of {self.config.train.num_epochs}.')
             self.train_one_epoch()
             self.validate()
@@ -129,6 +129,6 @@ class CellAgent:
             'valid_kld_loss': self.valid_kld_loss / len(self.loader.valid_set),
             'valid_sum_loss': self.valid_sum_loss / len(self.loader.valid_set),
         }])
-        save_header = self.current_epoch == 0
+        save_header = self.current_epoch == 1
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
         wandb.log(log.iloc[:, 2:].to_dict(), step=self.current_epoch)
