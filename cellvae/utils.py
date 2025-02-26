@@ -2,6 +2,8 @@ import os
 import json
 import logging
 
+import wandb
+
 from easydict import EasyDict
 
 def load_config(config_path='config.json'):
@@ -22,4 +24,13 @@ def init_log(log_file='data/experiment.log'):
             logging.StreamHandler()
         ]
     )
-    logging.info('***Initializing experiment***')
+
+def init_wanb(on=False, project='CellVAE', **kwargs):
+    """Initialize remote tracking. Must call `wandb.finish()` after the run."""
+    mode = 'online' if on else 'disabled'
+    wandb.init(
+        project=project,
+        mode=mode,
+        **kwargs
+    )
+
