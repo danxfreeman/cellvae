@@ -1,6 +1,4 @@
-import os
 import json
-import logging
 
 import wandb
 
@@ -12,22 +10,9 @@ def load_config(config_path='config.json'):
         config_dict = json.load(f)
         return EasyDict(config_dict)
 
-def init_log(log_file='data/experiment.log'):
-    """Initialize log file."""
-    os.makedirs('data', exist_ok=True)
-    logging.basicConfig(
-        level=logging.INFO,
-        format='[%(asctime)s] %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %I:%M:%S %p',
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler()
-        ]
-    )
-
-def init_wanb(on=False, project='CellVAE', **kwargs):
+def init_wandb(track=False, project='CellVAE', **kwargs):
     """Initialize remote tracking. Must call `wandb.finish()` after the run."""
-    mode = 'online' if on else 'disabled'
+    mode = 'online' if track else 'disabled'
     wandb.init(
         project=project,
         mode=mode,
