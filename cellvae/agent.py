@@ -26,13 +26,12 @@ class CellAgent:
 
     def load_checkpoint(self):
         """Load checkpoint if available."""
-        logging.info('Looking for checkpoint file...')
         try:
             checkpoint = torch.load('data/checkpoint.pth.tar', map_location=self.device)
             self.current_epoch = checkpoint['epoch']
             self.model.load_state_dict(checkpoint['model'])
             self.opt.load_state_dict(checkpoint['optimizer'])
-            logging.info(f'Checkpoint loaded at epoch {self.current_epoch}')
+            logging.info(f'Checkpoint loaded at epoch {self.current_epoch}.')
         except FileNotFoundError:
             logging.info('No checkpoint found. Creating new model.')
     
@@ -123,12 +122,12 @@ class CellAgent:
         log = pd.DataFrame([{
             'time': str(datetime.now()),
             'epoch': self.current_epoch,
-            'train_mse_loss': self.train_mse_loss / max(len(self.loader.train_set), 1),
-            'train_kld_loss': self.train_kld_loss / max(len(self.loader.train_set), 1),
-            'train_sum_loss': self.train_sum_loss / max(len(self.loader.train_set), 1),
-            'valid_mse_loss': self.valid_mse_loss / max(len(self.loader.valid_set), 1),
-            'valid_kld_loss': self.valid_kld_loss / max(len(self.loader.valid_set), 1),
-            'valid_sum_loss': self.valid_sum_loss / max(len(self.loader.valid_set), 1),
+            'train_mse_loss': self.train_mse_loss / max(len(self.loader.train_loader), 1),
+            'train_kld_loss': self.train_kld_loss / max(len(self.loader.train_loader), 1),
+            'train_sum_loss': self.train_sum_loss / max(len(self.loader.train_loader), 1),
+            'valid_mse_loss': self.valid_mse_loss / max(len(self.loader.valid_loader), 1),
+            'valid_kld_loss': self.valid_kld_loss / max(len(self.loader.valid_loader), 1),
+            'valid_sum_loss': self.valid_sum_loss / max(len(self.loader.valid_loader), 1),
         }])
         save_header = self.current_epoch == 1
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
