@@ -1,76 +1,22 @@
 import logging
 
-import torch
 import numpy as np
-import pandas as pd
-import tifffile as tiff
-import zarr
 
 from torch.utils.data import DataLoader, Dataset, Subset
+from torchvision.transforms import ToTensor
 
 class CellDataset(Dataset):
 
-    def __init__(self, config):
-        self.config = config
-        self.offset = self.config.preprocess.crop_size // 2
-        self.load_data()
-    
-    def load_data(self):
-        """Load dataset."""
-        logging.info('Loading image...')
-        self.load_image()
-        logging.info('Loading labels...')
-        self.load_labels()
-        self.filter_labels()
-        logging.info('Loaded.')
-
-    def load_image(self):
-        """Load image."""
-        if self.config.data.inmemory:
-            img = tiff.imread(self.config.data.img)
-            self.img = self.transform(img)
-        else:
-            store = tiff.imread(self.config.data.img, aszarr=True)
-            self.img = zarr.open(store, mode='r')[0]
-
-    def load_labels(self):
-        """Load cell information."""
-        cols = {
-            self.config.data.csv_id[0]: 'id',
-            self.config.data.csv_xy[0]: 'x',
-            self.config.data.csv_xy[1]: 'y',
-        }
-        self.csv = pd.read_csv(self.config.data.csv, usecols=cols.keys()).rename(columns=cols)
-    
-    def filter_labels(self):
-        """Filter cells near image boundaries."""
-        _, img_height, img_width = self.img.shape
-        self.csv = self.csv[
-            (self.csv.x > self.offset) &
-            (self.csv.x < img_width - self.offset) &
-            (self.csv.y > self.offset) &
-            (self.csv.y < img_height - self.offset)
-        ].reset_index(drop=True)
+    def __init__(self):
+        self.thumbnails = np.load('data/thumbnails.npy')
+        self.transform = ToTensor()
 
     def __len__(self):
-        return len(self.csv)
+        return len(self.thumbnails)
     
     def __getitem__(self, idx):
-        x = self.crop(idx)
-        x = x if self.config.data.inmemory else self.transform(x)
-        return torch.from_numpy(x)
-
-    def crop(self, idx, window=None):
-        """Crop thumbnail around a cell."""
-        offset = (window // 2) if window else self.offset
-        xcenter, ycenter = self.csv.at[idx, 'x'], self.csv.at[idx, 'y']
-        xstart, xend = xcenter - offset, xcenter + offset
-        ystart, yend = ycenter - offset, ycenter + offset
-        return self.img[:, ystart:yend, xstart:xend]
-
-    def transform(self, img):
-        """Transform image or patch."""
-        return img.astype('float32') / 255
+        x = self.thumbnails[idx]
+        return self.transform(x)
 
 class CellLoader:
 

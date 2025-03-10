@@ -2,9 +2,7 @@
     "data": {
         "img": "",
         "csv": "",
-        "csv_id": ["CellID"],
-        "csv_xy": ["X_centroid", "Y_centroid"],
-        "inmemory": true
+        "csv_xy": ["X_centroid", "Y_centroid"]
     },
     "preprocess": {
         "crop_size": 40,
