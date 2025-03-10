@@ -36,9 +36,12 @@ class CellCropper():
     def run(self):
         """Prepare dataset."""
         thumbnails = np.stack(list(self.crop()))
+        train_idx, valid_idx = self.split(size=len(thumbnails))
         logging.info('Exporting...')
         os.makedirs('data/', exist_ok=True)
         np.save('data/thumbnails.npy', thumbnails)
+        np.save('data/valid_idx.npy', valid_idx)
+        np.save('data/train_idx.npy', train_idx)
         logging.info('Thumbnails exported.')
     
     def crop(self):
@@ -49,6 +52,12 @@ class CellCropper():
             xstart, xend = xcenter - self.offset, xcenter + self.offset
             ystart, yend = ycenter - self.offset, ycenter + self.offset
             yield self.img[ystart:yend, xstart:xend]
+    
+    def split(self, size):
+        """Apply random test/train split."""
+        indices = np.random.permutation(size)
+        train_size = int(self.config.train.train_ratio * size)
+        return indices[:train_size], indices[train_size:]
 
 if __name__ == '__main__':
     from cellvae.utils import load_config

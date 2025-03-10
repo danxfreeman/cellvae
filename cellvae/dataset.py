@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 
 from torch.utils.data import DataLoader, Dataset, Subset
@@ -22,29 +20,13 @@ class CellLoader:
 
     def __init__(self, config):
         self.config = config
-        self.dataset = CellDataset(self.config)
-        self.load_split()
-        self.apply_split()
+        self.dataset = CellDataset()
+        self.train_idx = np.load('data/train_idx.npy')
+        self.valid_idx = np.load('data/valid_idx.npy')
+        self.split_dataset()
     
-    def load_split(self):
-        """Load or create train/test split indices."""
-        try:
-            self.valid_idx = np.load('data/valid_idx.npy')
-            logging.info('Reusing previous split.')
-        except FileNotFoundError:
-            logging.info('Creating new split.')
-            self.create_split()
-            np.save('data/valid_idx.npy', self.valid_idx)
-        self.train_idx = np.setdiff1d(np.arange(len(self.dataset)), self.valid_idx)
-
-    def create_split(self):
-        """Create random train/test split."""
-        valid_ratio = 1 - self.config.train.train_ratio
-        valid_size = int(len(self.dataset) * valid_ratio)
-        self.valid_idx = np.random.choice(np.arange(len(self.dataset)), size=valid_size, replace=False)
-    
-    def apply_split(self):
-        """Apply train/test split indices."""
+    def split_dataset(self):
+        """Split dataset into train and test sets."""
         self.train_set = Subset(self.dataset, self.train_idx)
         self.valid_set = Subset(self.dataset, self.valid_idx)
         self.train_loader = self.load_dataset(self.train_set)
