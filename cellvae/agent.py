@@ -4,7 +4,6 @@ import logging
 import torch
 import torch.nn.functional as F
 import pandas as pd
-import wandb
 
 from datetime import datetime
 
@@ -131,4 +130,4 @@ class CellAgent:
         }])
         save_header = self.current_epoch == 1
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
-        wandb.log(log.iloc[:, 2:].to_dict(), step=self.current_epoch)
+
