@@ -14,8 +14,10 @@ class CellCropper():
         self.window = config.preprocess.crop_size
         self.offset = self.window // 2
         self.batch_size = batch_size
+        os.makedirs('data/', exist_ok=True)
         self.load_img()
         self.load_csv()
+        self.filter_cells()
     
     def load_img(self):
         """Load image."""
@@ -24,21 +26,27 @@ class CellCropper():
         logging.info('Image loaded.')
     
     def load_csv(self):
-        """Load centroids."""
+        """Load cell data."""
         cols = {self.config.data.csv_xy[0]: 'x', self.config.data.csv_xy[1]: 'y'}
-        csv = pd.read_csv(self.config.data.csv, usecols=cols.keys()).rename(columns=cols)
+        self.csv = pd.read_csv(self.config.data.csv, usecols=cols.keys()).rename(columns=cols)
+    
+    def filter_cells(self):
+        """Filter cells near image boundaries."""
         img_height, img_width, _ = self.img.shape
-        self.csv = csv[
-            (csv.x > self.offset) & (csv.x < img_width - self.offset) &
-            (csv.y > self.offset) & (csv.y < img_height - self.offset)
-        ].to_numpy()
+        self.csv = self.csv[
+            (self.csv.x > self.offset) & (self.csv.x < img_width - self.offset) &
+            (self.csv.y > self.offset) & (self.csv.y < img_height - self.offset)
+        ]
+        if self.config.data.csv_subset:
+            self.csv = self.csv.sample(self.config.data.csv_subset)
+            np.save('data/subset_idx.npy', self.csv.index.to_numpy())
+        self.csv = self.csv.to_numpy(dtype=int)
 
     def run(self):
         """Prepare dataset."""
         thumbnails = np.stack(list(self.crop()))
         train_idx, valid_idx = self.split(size=len(thumbnails))
         logging.info('Exporting...')
-        os.makedirs('data/', exist_ok=True)
         np.save('data/thumbnails.npy', thumbnails)
         np.save('data/valid_idx.npy', valid_idx)
         np.save('data/train_idx.npy', train_idx)
@@ -57,7 +65,7 @@ class CellCropper():
         """Apply random test/train split."""
         indices = np.random.permutation(size)
         train_size = int(self.config.train.train_ratio * size)
-        return indices[:train_size], indices[train_size:]
+        return np.sort(indices[:train_size]), np.sort(indices[train_size:])
 
 if __name__ == '__main__':
     from cellvae.utils import load_config

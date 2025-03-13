@@ -2,7 +2,8 @@
     "data": {
         "img": "",
         "csv": "",
-        "csv_xy": ["X_centroid", "Y_centroid"]
+        "csv_xy": ["X_centroid", "Y_centroid"],
+        "csv_subset": null
     },
     "preprocess": {
         "crop_size": 40,
