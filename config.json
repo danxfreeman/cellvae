@@ -3,7 +3,8 @@
         "img": "",
         "csv": "",
         "csv_xy": ["X_centroid", "Y_centroid"],
-        "csv_subset": null
+        "csv_label": "mitosis",
+        "csv_subset": 50000
     },
     "preprocess": {
         "crop_size": 40,
@@ -12,13 +13,11 @@
     "train": {
         "train_ratio": 0.95,
         "batch_size": 256,
-        "num_epochs": 200,
+        "num_epochs": 20,
         "num_workers": 0
     },
     "model": {
         "seed": 123,
-        "latent_dim": 256,
-        "learning_rate": 0.001,
-        "beta": 0.1
+        "learning_rate": 0.001
     }
 }

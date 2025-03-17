@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 from torch.utils.data import DataLoader, Dataset, Subset
@@ -7,14 +8,16 @@ class CellDataset(Dataset):
 
     def __init__(self):
         self.thumbnails = np.load('data/thumbnails.npy')
+        self.labels = np.load('data/labels.npy')
         self.transform = ToTensor()
 
     def __len__(self):
         return len(self.thumbnails)
     
     def __getitem__(self, idx):
-        x = self.thumbnails[idx]
-        return self.transform(x)
+        x = self.transform(self.thumbnails[idx])
+        y = torch.tensor([self.labels[idx]], dtype=torch.float32)
+        return x, y
 
 class CellLoader:
 
