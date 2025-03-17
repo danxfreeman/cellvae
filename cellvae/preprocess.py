@@ -9,23 +9,28 @@ import numpy as np
 
 class CellCropper():
 
-    def __init__(self, config, batch_size=1000):
+    def __init__(self, config, outdir='data', batch_size=1000):
         self.config = config
+        self.outdir = outdir
+        self.batch_size = batch_size
         self.window = config.preprocess.crop_size
         self.offset = self.window // 2
-        self.batch_size = batch_size
+        self.load_data()
+    
+    def load_data(self):
+        """Load input data"""
         self.load_img()
         self.load_csv()
         self.filter_cells()
     
     def run(self):
         """Prepare dataset."""
-        os.makedirs('data/', exist_ok=True)
+        os.makedirs(self.outdir, exist_ok=True)
         if self.config.data.csv_subset:
             self.subset_cells()
         self.split_cells()
         self.crop_cells()
-        np.save('data/labels.npy', self.csv.lab.to_numpy())
+        np.save(f'{self.outdir}/labels.npy', self.csv.lab.to_numpy())
     
     def load_img(self):
         """Load image."""
@@ -54,7 +59,7 @@ class CellCropper():
     def subset_cells(self):
         """Create random subset."""
         self.csv = self.csv.sample(frac=1).groupby('lab').head(self.config.data.csv_subset).sort_index()
-        np.save('data/subset_idx.npy', self.csv.index.to_numpy())
+        np.save(f'{self.outdir}/subset_idx.npy', self.csv.index.to_numpy())
         self.csv.reset_index(inplace=True)
     
     def split_cells(self):
@@ -62,8 +67,8 @@ class CellCropper():
         train_df = self.csv.groupby('lab').sample(frac=self.config.train.train_ratio).sort_index()
         train_idx = train_df.index.to_numpy()
         valid_idx = np.setdiff1d(np.arange(len(self.csv)), train_idx)
-        np.save('data/valid_idx.npy', valid_idx)
-        np.save('data/train_idx.npy', train_idx)
+        np.save(f'{self.outdir}/valid_idx.npy', valid_idx)
+        np.save(f'{self.outdir}/train_idx.npy', train_idx)
 
     def crop_cells(self):
         """Create cell thumbnails."""
@@ -71,7 +76,7 @@ class CellCropper():
         for i, x in enumerate(self.crop()):
             thumbnails[i] = x
         logging.info('Exporting thumbnails...')
-        np.save('data/thumbnails.npy', thumbnails)
+        np.save(f'{self.outdir}/thumbnails.npy', thumbnails)
         logging.info('Thumbnails exported.')
     
     def crop(self):
@@ -83,6 +88,25 @@ class CellCropper():
             xstart, xend = xcenter - self.offset, xcenter + self.offset
             ystart, yend = ycenter - self.offset, ycenter + self.offset
             yield self.img[ystart:yend, xstart:xend]
+
+class InferenceCropper(CellCropper):
+
+    def __init__(self, config, img, csv, outdir='test_data', batch_size=1000):
+        self.img = img
+        self.csv = csv
+        super().__init__(config, outdir, batch_size)
+        
+    def load_data(self):
+        """Format input data."""
+        self.csv.columns = ['x', 'y'] + self.csv.columns[2:].to_list()
+        self.csv['lab'] = self.csv.get('lab', default=0) # placeholder label
+        self.filter_cells()
+    
+    def run(self):
+        """Prepare dataset."""
+        os.makedirs(self.outdir, exist_ok=True)
+        self.crop_cells()
+        np.save(f'{self.outdir}/labels.npy', self.csv.lab.to_numpy())
 
 if __name__ == '__main__':
     from cellvae.utils import load_config
