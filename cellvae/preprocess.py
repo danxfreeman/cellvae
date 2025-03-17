@@ -67,7 +67,9 @@ class CellCropper():
 
     def crop_cells(self):
         """Create cell thumbnails."""
-        thumbnails = np.stack(list(self.crop()))
+        thumbnails = np.zeros((len(self.csv), self.window, self.window, 3))
+        for i, x in enumerate(self.crop()):
+            thumbnails[i] = x
         logging.info('Exporting thumbnails...')
         np.save('data/thumbnails.npy', thumbnails)
         logging.info('Thumbnails exported.')
