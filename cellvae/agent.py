@@ -4,6 +4,7 @@ import logging
 import torch
 import pandas as pd
 
+from torchmetrics.classification import BinaryAUROC
 from datetime import datetime
 
 from cellvae.model import CellCNN
@@ -65,6 +66,7 @@ class CellAgent:
     def train_one_epoch(self):
         """Train one epoch."""
         self.train_loss = 0
+        self.train_auc = BinaryAUROC()
         self.model.train()
         for idx, (x, y) in enumerate(self.loader.train_loader):
             self.opt.zero_grad()
@@ -74,12 +76,14 @@ class CellAgent:
             loss.backward()
             self.opt.step()
             self.train_loss += loss.item()
+            self.train_auc.update(y_pred, y)
             if idx % 100 == 0:
                 logging.info(f'Training batch {idx} of {len(self.loader.train_loader)}.')
 
     def validate(self):
         """Evaluate model."""
         self.valid_loss = 0
+        self.valid_auc = BinaryAUROC()
         self.model.eval()
         with torch.no_grad():
             for idx, (x, y) in enumerate(self.loader.valid_loader):
@@ -87,6 +91,7 @@ class CellAgent:
                 y_pred = torch.sigmoid(self.model(x))
                 loss = self.loss(y_pred, y)
                 self.valid_loss += loss.item()
+                self.valid_auc.update(y_pred, y)
                 if idx % 100 == 0:
                     logging.info(f'Validating batch {idx} of {len(self.loader.valid_loader)}.')
 
@@ -108,7 +113,9 @@ class CellAgent:
             'time': str(datetime.now()),
             'epoch': self.current_epoch,
             'train_loss': self.train_loss / max(len(self.loader.train_loader), 1),
+            'train_auc': self.train_auc.compute().item(),
             'valid_loss': self.valid_loss / max(len(self.loader.valid_loader), 1),
+            'valid_auc': self.valid_auc.compute().item(),
         }])
         save_header = self.current_epoch == 1
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
