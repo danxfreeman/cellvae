@@ -15,22 +15,19 @@ class CellCropper():
         self.batch_size = batch_size
         self.window = config.preprocess.crop_size
         self.offset = self.window // 2
-        self.load_data()
-    
-    def load_data(self):
-        """Load input data"""
         self.load_img()
         self.load_csv()
-        self.filter_cells()
     
     def run(self):
         """Prepare dataset."""
         os.makedirs(self.outdir, exist_ok=True)
+        self.filter_cells()
         if self.config.data.csv_subset:
             self.subset_cells()
+        np.save(f'{self.outdir}/labels.npy', self.csv.lab.to_numpy())
+        np.save(f'{self.outdir}/subset_idx.npy', self.csv.index.to_numpy())
         self.split_cells()
         self.crop_cells()
-        np.save(f'{self.outdir}/labels.npy', self.csv.lab.to_numpy())
     
     def load_img(self):
         """Load image."""
@@ -54,25 +51,26 @@ class CellCropper():
             (self.csv.x > self.offset) & (self.csv.x < img_width - self.offset) &
             (self.csv.y > self.offset) & (self.csv.y < img_height - self.offset)
         ]
-        self.csv.reset_index(inplace=True)
     
     def subset_cells(self):
         """Create random subset."""
         self.csv = self.csv.sample(frac=1).groupby('lab').head(self.config.data.csv_subset).sort_index()
-        np.save(f'{self.outdir}/subset_idx.npy', self.csv.index.to_numpy())
-        self.csv.reset_index(inplace=True)
     
     def split_cells(self):
         """Create balanced test/train split."""
-        train_df = self.csv.groupby('lab').sample(frac=self.config.train.train_ratio).sort_index()
-        train_idx = train_df.index.to_numpy()
+        train_idx = []
+        for lab in [0, 1]:
+            indices = np.where(self.csv['lab'] == lab)[0]
+            size = int(len(indices) * self.config.train.train_ratio)
+            train_idx.extend(np.random.choice(indices, size=size, replace=False))
+        train_idx = np.sort(train_idx)
         valid_idx = np.setdiff1d(np.arange(len(self.csv)), train_idx)
         np.save(f'{self.outdir}/valid_idx.npy', valid_idx)
         np.save(f'{self.outdir}/train_idx.npy', train_idx)
 
     def crop_cells(self):
         """Create cell thumbnails."""
-        thumbnails = np.zeros((len(self.csv), self.window, self.window, 3))
+        thumbnails = np.zeros((len(self.csv), self.window, self.window, 3), dtype=np.uint8)
         for i, x in enumerate(self.crop()):
             thumbnails[i] = x
         logging.info('Exporting thumbnails...')
@@ -81,10 +79,9 @@ class CellCropper():
     
     def crop(self):
         """Crop cells."""
-        for idx, row in self.csv.iterrows():
+        for idx, (xcenter, ycenter) in enumerate(self.csv[['x', 'y']].values):
             if idx % 10000 == 0:
                 logging.info(f'Cropping cell {idx} of {len(self.csv)}.')
-            xcenter, ycenter = row['x'], row['y']
             xstart, xend = xcenter - self.offset, xcenter + self.offset
             ystart, yend = ycenter - self.offset, ycenter + self.offset
             yield self.img[ystart:yend, xstart:xend]
@@ -92,21 +89,27 @@ class CellCropper():
 class InferenceCropper(CellCropper):
 
     def __init__(self, config, img, csv, outdir='test_data', batch_size=1000):
-        self.img = img
-        self.csv = csv
         super().__init__(config, outdir, batch_size)
-        
-    def load_data(self):
-        """Format input data."""
+        self.img = img
+        self.csv = csv.reset_index(drop=True)
         self.csv.columns = ['x', 'y'] + self.csv.columns[2:].to_list()
         self.csv['lab'] = self.csv.get('lab', default=0) # placeholder label
-        self.filter_cells()
     
-    def run(self):
-        """Prepare dataset."""
-        os.makedirs(self.outdir, exist_ok=True)
-        self.crop_cells()
-        np.save(f'{self.outdir}/labels.npy', self.csv.lab.to_numpy())
+    def load_img(self):
+        """Do not load data."""
+        pass
+
+    def load_csv(self):
+        """Do not load metadata."""
+        pass
+
+    def split_cells(self):
+        """Do not split cells."""
+        pass
+
+    def subset_cells(self):
+        """Do not subset cells."""
+        pass
 
 if __name__ == '__main__':
     from cellvae.utils import load_config
