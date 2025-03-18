@@ -5,8 +5,8 @@ from torchvision.transforms import ToTensor
 
 class CellDataset(Dataset):
 
-    def __init__(self):
-        self.thumbnails = np.load('data/thumbnails.npy')
+    def __init__(self, dirname='data'):
+        self.thumbnails = np.load(f'{dirname}/thumbnails.npy')
         self.transform = ToTensor()
 
     def __len__(self):
