@@ -76,7 +76,7 @@ class CellAgent:
             loss.backward()
             self.opt.step()
             self.train_loss += loss.item()
-            self.train_auc.update(y_pred, y)
+            self.train_auc.update(torch.sigmoid(y_pred), y)
             if idx % 100 == 0:
                 logging.info(f'Training batch {idx} of {len(self.loader.train_loader)}.')
 
@@ -88,10 +88,10 @@ class CellAgent:
         with torch.no_grad():
             for idx, (x, y) in enumerate(self.loader.valid_loader):
                 x, y = x.to(self.device), y.to(self.device)
-                y_pred = torch.sigmoid(self.model(x))
+                y_pred = self.model(x)
                 loss = self.loss(y_pred, y)
                 self.valid_loss += loss.item()
-                self.valid_auc.update(y_pred, y)
+                self.valid_auc.update(torch.sigmoid(y_pred), y)
                 if idx % 100 == 0:
                     logging.info(f'Validating batch {idx} of {len(self.loader.valid_loader)}.')
 
@@ -105,7 +105,7 @@ class CellAgent:
                 x = x.to(self.device)
                 y_pred_batch = torch.sigmoid(self.model(x))
                 for y_pred in y_pred_batch:
-                    yield y_pred
+                    yield y_pred.item()
 
     def save_loss(self):
         """Save loss to CSV."""
