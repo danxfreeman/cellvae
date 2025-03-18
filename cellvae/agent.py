@@ -17,7 +17,7 @@ class CellAgent:
         torch.manual_seed(self.config.model.seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = CellCNN(self.config).to(self.device)
-        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
+        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate, weight_decay=self.config.model.weight_decay)
         self.loss = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(self.config.model.pos_weight))
         self.current_epoch = 1
         self.load_checkpoint()
