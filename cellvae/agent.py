@@ -110,11 +110,11 @@ class CellAgent:
         self.model.eval()
         with torch.no_grad():
             for i, x in enumerate(loader):
-                logging.info(f'Embedding batch {i} of {len(loader)}.')
+                if i % 100 == 0:
+                    logging.info(f'Embedding batch {i} of {len(loader)}.')
                 x = x.to(self.device)
-                x_hat_batch, z_batch, _ = self.model(x)
-                for x_hat, z in zip(x_hat_batch, z_batch):
-                    yield x_hat, z
+                z = self.model.encoder(x)[0]
+                yield z.detach().cpu()
 
     def save_loss(self):
         """Save loss to CSV."""
