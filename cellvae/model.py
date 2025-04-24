@@ -48,7 +48,10 @@ class CellDecoder(nn.Module):
     def __init__(self, config, fc_dim):
         super().__init__()
         self.conv_dim = int((fc_dim // 64) ** 0.5)
-        self.fc_dec = nn.Linear(config.model.latent_dim, fc_dim)
+        self.fc_dec = nn.Sequential(
+            nn.Linear(config.model.latent_dim, fc_dim),
+            nn.ReLU()
+        )
         self.conv_layers = nn.Sequential(
             nn.ConvTranspose2d(in_channels=64, out_channels=32, stride=2, kernel_size=3, padding=1, output_padding=1),
             nn.ReLU(),
