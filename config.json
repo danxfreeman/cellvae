@@ -1,11 +1,4 @@
 {
-    "data": {
-        "img": "",
-        "csv": "",
-        "csv_xy": ["X_centroid", "Y_centroid"],
-        "csv_label": "mitosis",
-        "csv_subset": 50000
-    },
     "preprocess": {
         "crop_size": 40,
         "vignette": 0
