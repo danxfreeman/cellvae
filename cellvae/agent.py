@@ -110,13 +110,15 @@ class CellAgent:
 
     def save_loss(self):
         """Save loss to CSV."""
+        len_train = len(self.loader.train_loader)
+        len_valid = len(self.loader.valid_loader)
         log = pd.DataFrame([{
             'time': str(datetime.now()),
             'epoch': self.current_epoch,
-            'train_loss': self.train_loss / max(len(self.loader.train_loader), 1),
+            'train_loss': self.train_loss / len_train,
             'train_auc': self.train_auc.compute().item(),
-            'valid_loss': self.valid_loss / max(len(self.loader.valid_loader), 1),
-            'valid_auc': self.valid_auc.compute().item(),
+            'valid_loss': (self.valid_loss / len_valid) if len_valid else 0,
+            'valid_auc': self.valid_auc.compute().item() if len_valid else 0
         }])
         save_header = self.current_epoch == 1
         log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
