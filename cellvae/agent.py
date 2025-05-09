@@ -11,9 +11,10 @@ from cellvae.model import CellCNN
 
 class CellAgent:
 
-    def __init__(self, config, loader):
+    def __init__(self, config, loader, weights_path=None):
         self.config = config
         self.loader = loader
+        self.weights_path = weights_path
         torch.manual_seed(self.config.model.seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = CellCNN(self.config).to(self.device)
@@ -27,7 +28,7 @@ class CellAgent:
     def load_checkpoint(self):
         """Load checkpoint if available."""
         try:
-            checkpoint = torch.load('data/checkpoint.pth.tar', map_location=self.device)
+            checkpoint = torch.load(self.weights_path, map_location=self.device)
             self.current_epoch = checkpoint['epoch']
             self.model.load_state_dict(checkpoint['model'])
             self.opt.load_state_dict(checkpoint['optimizer'])
@@ -42,7 +43,7 @@ class CellAgent:
             'model': self.model.state_dict(),
             'optimizer': self.opt.state_dict()
         }
-        torch.save(state, 'data/checkpoint.pth.tar')
+        torch.save(state, self.weights_path)
 
     def run(self):
         """Main operator."""
