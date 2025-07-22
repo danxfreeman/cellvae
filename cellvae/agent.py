@@ -11,10 +11,12 @@ from cellvae.model import CellCNN
 
 class CellAgent:
 
-    def __init__(self, config, loader, weights_path=None):
+    def __init__(self, config, loader, weights_path='results/checkpoint.pth.tar', 
+                 loss_path='results/loss.csv'):
         self.config = config
         self.loader = loader
         self.weights_path = weights_path
+        self.loss_path = loss_path
         torch.manual_seed(self.config.model.seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = CellCNN(self.config).to(self.device)
@@ -121,4 +123,4 @@ class CellAgent:
             'valid_auc': self.valid_auc.compute().item() if len_valid else 0
         }])
         save_header = self.current_epoch == 1
-        log.to_csv('data/loss.csv', mode='a', index=False, header=save_header)
+        log.to_csv(self.loss_path, mode='a', index=False, header=save_header)
