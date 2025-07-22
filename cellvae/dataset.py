@@ -24,10 +24,19 @@ class CellLoader:
     def __init__(self, config):
         self.config = config
         self.dataset = CellDataset()
-        self.train_idx = np.load('data/train_idx.npy')
-        self.valid_idx = np.load('data/valid_idx.npy')
+        self.split_labels()
         self.split_dataset()
     
+    def split_labels(self):
+        """Create balanced test/train split."""
+        train_idx = []
+        for lab in [0, 1]:
+            indices = np.where(self.dataset.labels == lab)[0]
+            size = int(len(indices) * self.config.train.train_ratio)
+            train_idx.extend(np.random.choice(indices, size=size, replace=False))
+        self.train_idx = np.sort(train_idx)
+        self.valid_idx = np.setdiff1d(np.arange(len(self.dataset.labels)), train_idx)
+
     def split_dataset(self):
         """Split dataset into train and test sets."""
         self.train_set = Subset(self.dataset, self.train_idx)
