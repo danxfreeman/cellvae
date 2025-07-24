@@ -6,9 +6,9 @@ from torchvision.transforms import ToTensor
 
 class CellDataset(Dataset):
 
-    def __init__(self, dirname='data'):
-        self.thumbnails = np.load(f'{dirname}/thumbnails.npy')
-        self.labels = np.load(f'{dirname}/labels.npy')
+    def __init__(self, datadir='data'):
+        self.thumbnails = np.load(f'{datadir}/thumbnails.npy')
+        self.labels = np.load(f'{datadir}/labels.npy')
         self.transform = ToTensor()
 
     def __len__(self):
