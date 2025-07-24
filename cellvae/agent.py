@@ -28,15 +28,13 @@ class CellAgent:
         logging.info(self.model)
 
     def load_checkpoint(self):
-        """Load checkpoint if available."""
-        try:
+        """Load checkpoint if provided."""
+        if self.weights_path:
             checkpoint = torch.load(self.weights_path, map_location=self.device)
             self.current_epoch = checkpoint['epoch']
             self.model.load_state_dict(checkpoint['model'])
             self.opt.load_state_dict(checkpoint['optimizer'])
             logging.info(f'Checkpoint loaded at epoch {self.current_epoch}.')
-        except FileNotFoundError:
-            logging.info('No checkpoint found. Creating new model.')
     
     def save_checkpoint(self):
         """Save checkpoint."""
@@ -45,7 +43,7 @@ class CellAgent:
             'model': self.model.state_dict(),
             'optimizer': self.opt.state_dict()
         }
-        torch.save(state, self.weights_path)
+        torch.save(state, f'{self.outdir}/checkpoint_epoch{self.current_epoch}.pth.tar')
 
     def run(self):
         """Main operator."""
