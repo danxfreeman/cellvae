@@ -6,7 +6,7 @@ import numpy as np
 class CellCropper():
     
     def __init__(self, img, csv, dirname='data', crop_size=64, batch_size=1_000):
-        self.img = img
+        self.img = img.astype(np.float32)
         self.csv = csv.reset_index(drop=True).astype(int)
         self.csv.columns = ['x', 'y']
         self.dirname = dirname
@@ -25,7 +25,7 @@ class CellCropper():
 
     def filter_cells(self):
         """Filter cells near image boundaries."""
-        img_height, img_width, _ = self.img.shape
+        _, img_height, img_width = self.img.shape
         self.csv = self.csv[
             (self.csv.x > self.offset) & (self.csv.x < img_width - self.offset) &
             (self.csv.y > self.offset) & (self.csv.y < img_height - self.offset)
@@ -33,7 +33,8 @@ class CellCropper():
     
     def crop_cells(self):
         """Crop all cells."""
-        self.thumbnails = np.zeros((len(self.csv), self.crop_size, self.crop_size, 3), dtype=np.uint8)
+        num_channels = self.img.shape[0]
+        self.thumbnails = np.zeros((len(self.csv), self.crop_size, self.crop_size, num_channels), dtype=np.uint16)
         for i, (xcenter, ycenter) in enumerate(self.csv[['x', 'y']].values):
             self.thumbnails[i] = self.crop_one(xcenter, ycenter)
             if i % 10_000 == 0:
@@ -43,4 +44,5 @@ class CellCropper():
         """Crop one cell."""
         xstart, xend = xcenter - self.offset, xcenter + self.offset
         ystart, yend = ycenter - self.offset, ycenter + self.offset
-        return self.img[ystart:yend, xstart:xend]
+        return self.img[:, ystart:yend, xstart:xend]
+

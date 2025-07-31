@@ -10,7 +10,7 @@ from cellvae.model import CellVAE
 
 class CellAgent:
 
-    def __init__(self, config, loader=None, outdir='results'):
+    def __init__(self, config, loader=None, in_channels=None, outdir='results'):
         self.config = config
         self.loader = loader
         os.makedirs(outdir, exist_ok=True)
@@ -18,7 +18,8 @@ class CellAgent:
         self.loss_path = f'{outdir}/loss.csv'
         torch.manual_seed(self.config.model.seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = CellVAE(self.config).to(self.device)
+        in_channels = in_channels or self.loader.dataset[0].shape[0]
+        self.model = CellVAE(self.config, in_channels=in_channels).to(self.device)
         self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
         self.current_epoch = 1
         self.load_checkpoint()

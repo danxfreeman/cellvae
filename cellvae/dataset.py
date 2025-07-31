@@ -2,20 +2,19 @@ import logging
 
 import numpy as np
 
+import torch
 from torch.utils.data import DataLoader, Dataset, Subset
-from torchvision.transforms import ToTensor
 
 class CellDataset(Dataset):
 
     def __init__(self, dirname='data'):
         self.thumbnails = np.load(f'{dirname}/thumbnails.npy')
-        self.transform = ToTensor()
 
     def __len__(self):
         return len(self.thumbnails)
     
     def __getitem__(self, idx):
-        return self.transform(self.thumbnails[idx])
+        return torch.from_numpy(self.thumbnails[idx])
 
 class CellLoader:
 
