@@ -1,19 +1,18 @@
 {
     "preprocess": {
-        "crop_size": 40,
+        "crop_size": 32,
         "vignette": 0
     },
     "train": {
-        "train_ratio": 0.95,
+        "train_ratio": 0.8,
         "batch_size": 256,
-        "num_epochs": 20,
+        "num_epochs": 50,
         "num_workers": 0
     },
     "model": {
         "seed": 123,
         "learning_rate": 0.001,
-        "pos_weight": 50,
-        "weight_decay": 1e-4,
-        "dropout_prob": 0.5
+        "latent_dim": 256,
+        "beta": 0.01
     }
 }

@@ -1,4 +1,5 @@
-import torch
+import logging
+
 import numpy as np
 
 from torch.utils.data import DataLoader, Dataset, Subset
@@ -8,35 +9,32 @@ class CellDataset(Dataset):
 
     def __init__(self, dirname='data'):
         self.thumbnails = np.load(f'{dirname}/thumbnails.npy')
-        self.labels = np.load(f'{dirname}/labels.npy')
         self.transform = ToTensor()
 
     def __len__(self):
         return len(self.thumbnails)
     
     def __getitem__(self, idx):
-        x = self.transform(self.thumbnails[idx])
-        y = torch.tensor([self.labels[idx]], dtype=torch.float32)
-        return x, y
+        return self.transform(self.thumbnails[idx])
 
 class CellLoader:
 
-    def __init__(self, config):
+    def __init__(self, config, dirname=None):
         self.config = config
-        self.dataset = CellDataset()
-        self.split_labels()
+        self.dirname = dirname
+        self.dataset = CellDataset(dirname=dirname)
+        self.split_indices()
         self.split_dataset()
-    
-    def split_labels(self):
-        """Create balanced test/train split."""
-        train_idx = []
-        for lab in [0, 1]:
-            indices = np.where(self.dataset.labels == lab)[0]
-            size = int(len(indices) * self.config.train.train_ratio)
-            train_idx.extend(np.random.choice(indices, size=size, replace=False))
-        self.train_idx = np.sort(train_idx)
-        self.valid_idx = np.setdiff1d(np.arange(len(self.dataset.labels)), train_idx)
 
+    def split_indices(self):
+        """Create random test/train split."""
+        indices = np.arange(len(self.dataset.thumbnails))
+        np.random.shuffle(indices)
+        split = int(len(indices) * self.config.train.train_ratio)
+        self.train_idx = np.sort(indices[:split])
+        self.valid_idx = np.sort(indices[split:])
+        np.save(f'{self.dirname}/valid_idx.npy', self.valid_idx)
+    
     def split_dataset(self):
         """Split dataset into train and test sets."""
         self.train_set = Subset(self.dataset, self.train_idx)

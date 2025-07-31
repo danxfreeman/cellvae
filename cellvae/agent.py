@@ -1,31 +1,27 @@
-import json
+import os
 import logging
-
-import torch
-import pandas as pd
-
-from torchmetrics.classification import BinaryAUROC
 from datetime import datetime
 
-from cellvae.model import CellCNN
+import torch
+import torch.nn.functional as F
+import pandas as pd
+
+from cellvae.model import CellVAE
 
 class CellAgent:
 
-    def __init__(self, config, loader, weights_path='results/checkpoint.pth.tar', 
-                 loss_path='results/loss.csv'):
+    def __init__(self, config, loader=None, outdir='results'):
         self.config = config
         self.loader = loader
-        self.weights_path = weights_path
-        self.loss_path = loss_path
+        os.makedirs(outdir, exist_ok=True)
+        self.weights_path = f'{outdir}/checkpoint.pth.tar'
+        self.loss_path = f'{outdir}/loss.csv'
         torch.manual_seed(self.config.model.seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = CellCNN(self.config).to(self.device)
-        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate, weight_decay=self.config.model.weight_decay)
-        self.loss = torch.nn.BCEWithLogitsLoss(pos_weight=torch.tensor(self.config.model.pos_weight))
+        self.model = CellVAE(self.config).to(self.device)
+        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
         self.current_epoch = 1
         self.load_checkpoint()
-        logging.info(json.dumps(self.config, indent=4))
-        logging.info(self.model)
 
     def load_checkpoint(self):
         """Load checkpoint if available."""
@@ -68,59 +64,78 @@ class CellAgent:
     
     def train_one_epoch(self):
         """Train one epoch."""
-        self.train_loss = 0
-        self.train_auc = BinaryAUROC()
+        self.train_mse_loss = 0
+        self.train_kld_loss = 0
+        self.train_sum_loss = 0
         self.model.train()
-        for idx, (x, y) in enumerate(self.loader.train_loader):
+        for idx, x in enumerate(self.loader.train_loader):
             self.opt.zero_grad()
-            x, y = x.to(self.device), y.to(self.device)
-            y_pred = self.model(x)
-            loss = self.loss(y_pred, y)
-            loss.backward()
+            x = x.to(self.device)
+            x_hat, mu, logvar = self.model(x)
+            mse_loss, kld_loss, sum_loss = self.loss(x, x_hat, mu, logvar)
+            sum_loss.backward()
             self.opt.step()
-            self.train_loss += loss.item()
-            self.train_auc.update(torch.sigmoid(y_pred), y)
+            self.train_mse_loss += mse_loss.item()
+            self.train_kld_loss += kld_loss.item()
+            self.train_sum_loss += sum_loss.item()
             if idx % 100 == 0:
                 logging.info(f'Training batch {idx} of {len(self.loader.train_loader)}.')
 
     def validate(self):
         """Evaluate model."""
-        self.valid_loss = 0
-        self.valid_auc = BinaryAUROC()
+        self.valid_mse_loss = 0
+        self.valid_kld_loss = 0
+        self.valid_sum_loss = 0
         self.model.eval()
         with torch.no_grad():
-            for idx, (x, y) in enumerate(self.loader.valid_loader):
-                x, y = x.to(self.device), y.to(self.device)
-                y_pred = self.model(x)
-                loss = self.loss(y_pred, y)
-                self.valid_loss += loss.item()
-                self.valid_auc.update(torch.sigmoid(y_pred), y)
+            for idx, x in enumerate(self.loader.valid_loader):
+                x = x.to(self.device)
+                x_hat, mu, logvar = self.model(x)
+                mse_loss, kld_loss, sum_loss = self.loss(x, x_hat, mu, logvar)
+                self.valid_mse_loss += mse_loss.item()
+                self.valid_kld_loss += kld_loss.item()
+                self.valid_sum_loss += sum_loss.item()
                 if idx % 100 == 0:
                     logging.info(f'Validating batch {idx} of {len(self.loader.valid_loader)}.')
 
-    def infer(self, loader):
-        """Generate predictions."""
+    def loss(self, x, x_hat, mu, logvar):
+        """Calculate loss."""
+        mse_loss = F.mse_loss(x_hat, x, reduction='sum') / x.size(0)
+        kld_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / x.size(0)
+        sum_loss = mse_loss + (kld_loss * self.config.model.beta)
+        return mse_loss, kld_loss, sum_loss
+
+    def _infer(self, x, fn, batch_size=10):
+        """Process dataset in batches."""
         self.model.eval()
         with torch.no_grad():
-            for idx, (x, _) in enumerate(loader):
-                if idx % 100 == 0:
-                    logging.info(f'Evaluating batch {idx} of {len(loader)}.')
-                x = x.to(self.device)
-                y_pred_batch = torch.sigmoid(self.model(x))
-                for y_pred in y_pred_batch:
-                    yield y_pred.item()
+            for i, (x_batch,) in enumerate(x):
+                x_batch = x_batch.to(self.device)
+                if i % batch_size == 0:
+                    logging.info(f'Processing batch {i} of {len(x)}.')
+                yield fn(x_batch).detach().cpu()
+    
+    def encode(self, x):
+        """Encode thumbnails."""
+        yield from self._infer(x, lambda x: self.model.encoder(x)[0])
+
+    def decode(self, x):
+        """Reconstruct thumbnails."""
+        yield from self._infer(x, lambda x: self.model(x)[0])
 
     def save_loss(self):
         """Save loss to CSV."""
-        len_train = len(self.loader.train_loader)
-        len_valid = len(self.loader.valid_loader)
+        len_train = len(self.loader.train_loader) or 1
+        len_valid = len(self.loader.valid_loader) or 1
         log = pd.DataFrame([{
             'time': str(datetime.now()),
             'epoch': self.current_epoch,
-            'train_loss': self.train_loss / len_train,
-            'train_auc': self.train_auc.compute().item(),
-            'valid_loss': (self.valid_loss / len_valid) if len_valid else 0,
-            'valid_auc': self.valid_auc.compute().item() if len_valid else 0
+            'train_mse_loss': self.train_mse_loss / len_train,
+            'train_kld_loss': self.train_kld_loss / len_train,
+            'train_sum_loss': self.train_sum_loss / len_train,
+            'valid_mse_loss': self.valid_mse_loss / len_valid,
+            'valid_kld_loss': self.valid_kld_loss / len_valid,
+            'valid_sum_loss': self.valid_sum_loss / len_valid,
         }])
         save_header = self.current_epoch == 1
         log.to_csv(self.loss_path, mode='a', index=False, header=save_header)

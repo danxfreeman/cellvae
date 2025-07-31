@@ -8,8 +8,8 @@ class CellCropper():
     def __init__(self, img, csv, dirname='data', crop_size=64, batch_size=1_000):
         self.img = img
         self.csv = csv.reset_index(drop=True).astype(int)
-        self.csv.columns = ['x', 'y', 'lab']
-        self.outdir = dirname
+        self.csv.columns = ['x', 'y']
+        self.dirname = dirname
         self.crop_size = crop_size
         self.offset = self.crop_size // 2
         self.batch_size = batch_size
@@ -20,7 +20,6 @@ class CellCropper():
         self.crop_cells()
         os.makedirs(self.dirname, exist_ok=True)
         np.save(f'{self.dirname}/subset_idx.npy', self.csv.index.to_numpy())
-        np.save(f'{self.dirname}/labels.npy', self.csv.lab.to_numpy())
         np.save(f'{self.dirname}/thumbnails.npy', self.thumbnails)
         logging.info('Done.')
 
