@@ -27,6 +27,16 @@ class CellLoader:
         self.split_dataset()
 
     def split_indices(self):
+        """Load split indicies if available."""
+        try:
+            self.valid_idx = np.load(f'{self.dirname}/valid_idx.npy')
+            self.train_idx = np.setdiff1d(np.arange(len(self.dataset)), self.valid_idx)
+            logging.info("Loaded test/train split.")
+        except FileNotFoundError:
+            logging.info("Creating new test/train split.")
+            self.create_split()
+
+    def create_split(self):
         """Create random test/train split."""
         indices = np.arange(len(self.dataset.thumbnails))
         np.random.shuffle(indices)
