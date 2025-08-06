@@ -1,7 +1,9 @@
 {
     "preprocess": {
         "crop_size": 32,
-        "vignette": 0
+        "vignette": 0,
+        "min_quant": 0.05,
+        "max_quant": 0.999
     },
     "train": {
         "train_ratio": 0.8,
