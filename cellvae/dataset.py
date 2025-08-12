@@ -1,27 +1,30 @@
 import logging
 
 import numpy as np
-
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 
+from cellvae.transform import Vignette
+
 class CellDataset(Dataset):
 
-    def __init__(self, dirname='data'):
+    def __init__(self, config, dirname='data'):
         self.thumbnails = np.load(f'{dirname}/thumbnails.npy')
+        self.transform = Vignette(config)
 
     def __len__(self):
         return len(self.thumbnails)
     
     def __getitem__(self, idx):
-        return torch.from_numpy(self.thumbnails[idx])
+        x = torch.from_numpy(self.thumbnails[idx])
+        return self.transform(x)
 
 class CellLoader:
 
-    def __init__(self, config, dirname=None):
+    def __init__(self, config, dirname='data'):
         self.config = config
         self.dirname = dirname
-        self.dataset = CellDataset(dirname=dirname)
+        self.dataset = CellDataset(config=config, dirname=dirname)
         self.split_indices()
         self.split_dataset()
 
