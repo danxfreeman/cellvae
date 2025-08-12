@@ -138,5 +138,7 @@ class CellAgent:
             'valid_kld_loss': self.valid_kld_loss / len_valid,
             'valid_sum_loss': self.valid_sum_loss / len_valid,
         }])
-        save_header = self.current_epoch == 1
-        log.to_csv(self.loss_path, mode='a', index=False, header=save_header)
+        if self.current_epoch == 1:
+            log.to_csv(self.loss_path, mode='w', header=True, index=False)
+        else:
+            log.to_csv(self.loss_path, mode='a', header=False, index=False)
