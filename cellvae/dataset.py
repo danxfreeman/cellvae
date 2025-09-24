@@ -61,6 +61,5 @@ class CellLoader:
         return DataLoader(
             dataset,
             shuffle=True,
-            batch_size=self.config.train.batch_size,
-            num_workers=self.config.train.num_workers
+            batch_size=self.config.train.batch_size
         )
