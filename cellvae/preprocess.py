@@ -5,13 +5,13 @@ import numpy as np
 
 class CellCropper():
     
-    def __init__(self, img, csv, dirname='data', crop_size=32, batch_size=1_000, transform_fn=None):
+    def __init__(self, img, csv, config, dirname='data', batch_size=1_000, transform_fn=None):
         self.img = img
         self.n_channels = self.img.shape[0]
         self.csv = csv.reset_index(drop=True).astype(int)
         self.n_cells = self.csv.shape[0]
         self.dirname = dirname
-        self.crop_size = crop_size
+        self.crop_size = config.preprocess.crop_size
         self.offset = self.crop_size // 2
         self.batch_size = batch_size
         self.transform_fn = transform_fn
