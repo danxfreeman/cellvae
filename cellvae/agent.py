@@ -16,7 +16,6 @@ class CellAgent:
         os.makedirs(outdir, exist_ok=True)
         self.weights_path = f'{outdir}/checkpoint.pth.tar'
         self.loss_path = f'{outdir}/loss.csv'
-        torch.manual_seed(self.config.model.seed)
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         in_channels = in_channels or self.loader.dataset[0].shape[0]
         self.model = CellVAE(self.config, in_channels=in_channels).to(self.device)
