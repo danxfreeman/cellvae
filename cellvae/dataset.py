@@ -4,27 +4,25 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 
-from cellvae.transform import Vignette
-
 class CellDataset(Dataset):
 
-    def __init__(self, config, dirname='data'):
-        self.thumbnails = np.load(f'{dirname}/thumbnails.npy')
-        self.transform = Vignette(config)
+    def __init__(self, dirname='data', augment_fn=None):
+        self.thumbnails = np.load(f'{dirname}/thumbnails.npy').astype(np.float32)
+        self.augment = augment_fn or (lambda x: x)
 
     def __len__(self):
         return len(self.thumbnails)
     
     def __getitem__(self, idx):
         x = torch.from_numpy(self.thumbnails[idx])
-        return self.transform(x)
+        return self.augment(x)
 
 class CellLoader:
 
-    def __init__(self, config, dirname='data'):
+    def __init__(self, config, dirname='data', augment_fn=None):
         self.config = config
         self.dirname = dirname
-        self.dataset = CellDataset(config=config, dirname=dirname)
+        self.dataset = CellDataset(dirname=dirname, augment_fn=augment_fn)
         self.split_indices()
         self.split_dataset()
 
