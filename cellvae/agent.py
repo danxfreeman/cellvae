@@ -109,19 +109,20 @@ class CellAgent:
         """Process dataset in batches."""
         self.model.eval()
         with torch.no_grad():
-            for i, (x_batch,) in enumerate(x):
+            for i, x_batch in enumerate(x):
+                x_batch = x_batch[None] if x_batch.ndim == 3 else x_batch
                 x_batch = x_batch.to(self.device)
                 if i % batch_size == 0:
                     logging.info(f'Processing batch {i} of {len(x)}.')
-                yield fn(x_batch).detach().cpu()
+                yield fn(x_batch)[0].detach().cpu()
     
     def encode(self, x):
         """Encode thumbnails."""
-        yield from self._infer(x, lambda x: self.model.encoder(x)[0])
+        yield from self._infer(x, self.model.encoder)
 
     def decode(self, x):
         """Reconstruct thumbnails."""
-        yield from self._infer(x, lambda x: self.model(x)[0])
+        yield from self._infer(x, self.model)
 
     def save_loss(self):
         """Save loss to CSV."""
