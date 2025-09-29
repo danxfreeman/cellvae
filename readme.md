@@ -2,6 +2,9 @@
 
 Embed multiplex cell thumbnails.
 
+Based on [Morphology-Aware Profiling of Highly Multiplexed Tissue Images using Variational Autoencoders
+](https://pmc.ncbi.nlm.nih.gov/articles/PMC12262432/).
+
 ## Settings
 
 VAE settings are stored in `config.json`.
