@@ -1,13 +1,9 @@
 {
     "preprocess": {
-        "crop_size": 32,
-        "alpha": 0,
-        "beta": 0,
-        "min_quant": 0.05,
-        "max_quant": 0.999
+        "crop_size": 32
     },
     "train": {
-        "train_ratio": 0.8,
+        "train_ratio": 0.95,
         "batch_size": 256,
         "num_epochs": 50
     },

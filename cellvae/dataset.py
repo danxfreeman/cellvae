@@ -6,9 +6,10 @@ from torch.utils.data import DataLoader, Dataset, Subset
 
 class CellDataset(Dataset):
 
-    def __init__(self, dirname='data', augment_fn=None):
+    def __init__(self, dirname='data', transform_fn=lambda x: x, augment_fn=lambda x: x):
         self.thumbnails = np.load(f'{dirname}/thumbnails.npy').astype(np.float32)
-        self.augment = augment_fn or (lambda x: x)
+        self.thumbnails = transform_fn(self.thumbnails)
+        self.augment = augment_fn
 
     def __len__(self):
         return len(self.thumbnails)
