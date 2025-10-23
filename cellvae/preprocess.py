@@ -8,7 +8,6 @@ class CellCropper():
     def __init__(self, img, csv, dirname='data', crop_size=32, channel_first=False):
         self.img = img
         self.csv = csv.reset_index(drop=True).astype(int)
-        self.n_cells = len(self.csv)
         self.dirname = dirname
         self.crop_size = crop_size
         self.offset = self.crop_size // 2
@@ -35,11 +34,11 @@ class CellCropper():
     
     def crop_cells(self):
         """Crop all cells."""
-        self.thumbnails = np.zeros((self.n_cells, self.n_channels, self.crop_size, self.crop_size), dtype=np.uint16)
+        self.thumbnails = np.zeros((len(self.csv), self.n_channels, self.crop_size, self.crop_size), dtype=np.uint16)
         for i, (xcenter, ycenter) in enumerate(self.csv.values):
             self.thumbnails[i] = self.crop_one(xcenter, ycenter)
             if i % 100 == 0:
-                logging.info(f'Cropping cell {i} of {self.n_cells}.')
+                logging.info(f'Cropping cell {i} of {len(self.csv)}.')
 
     def crop_one(self, xcenter, ycenter):
         """Crop one cell."""
