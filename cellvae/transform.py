@@ -3,10 +3,10 @@ import torch
 
 class Vignette:
 
-    def __init__(self, alpha=0, beta=0, crop_size=32):
+    def __init__(self, alpha=0, crop_size=32):
         x = np.linspace(-1, 1, crop_size, dtype=np.float32)
         r = np.sqrt(x[:, None]**2 + x[None, :]**2) / np.sqrt(2)
-        mask = np.cos(0.5*np.pi * r**alpha)**beta
+        mask = np.cos(0.5*np.pi * r**alpha)
         mask = np.nan_to_num(mask.clip(0, 1))
         self.mask = torch.tensor(mask)
     
