@@ -20,10 +20,10 @@ class CellDataset(Dataset):
 
 class CellLoader:
 
-    def __init__(self, config, dirname='data', augment_fn=None):
+    def __init__(self, config, dirname='data', transform_fn=None, augment_fn=None):
         self.config = config
         self.dirname = dirname
-        self.dataset = CellDataset(dirname=dirname, augment_fn=augment_fn)
+        self.dataset = CellDataset(dirname=dirname, transform_fn=transform_fn, augment_fn=augment_fn)
         self.split_indices()
         self.split_dataset()
 
