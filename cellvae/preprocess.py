@@ -37,7 +37,7 @@ class CellCropper():
         self.thumbnails = np.zeros((len(self.csv), self.n_channels, self.crop_size, self.crop_size), dtype=np.uint16)
         for i, (xcenter, ycenter) in enumerate(self.csv.values):
             self.thumbnails[i] = self.crop_one(xcenter, ycenter)
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 logging.info(f'Cropping cell {i} of {len(self.csv)}.')
 
     def crop_one(self, xcenter, ycenter):
