@@ -6,30 +6,29 @@ from torch.utils.data import DataLoader, Dataset, Subset
 
 class CellDataset(Dataset):
 
-    def __init__(self, dirname='data', augment_fn=None):
-        self.thumbnails = np.load(f'{dirname}/thumbnails.npy').astype(np.float32)
+    def __init__(self, config, augment_fn=None):
+        self.thumbnails = np.load(config.data.thumb_path)
         self.augment = augment_fn or (lambda x: x)
 
     def __len__(self):
         return len(self.thumbnails)
-    
+
     def __getitem__(self, idx):
         x = torch.from_numpy(self.thumbnails[idx])
         return self.augment(x)
 
 class CellLoader:
 
-    def __init__(self, config, dirname='data', augment_fn=None):
+    def __init__(self, config, augment_fn=None):
         self.config = config
-        self.dirname = dirname
-        self.dataset = CellDataset(dirname=dirname, augment_fn=augment_fn)
+        self.dataset = CellDataset(config, augment_fn)
         self.split_indices()
         self.split_dataset()
 
     def split_indices(self):
         """Load split indicies if available."""
         try:
-            self.valid_idx = np.load(f'{self.dirname}/valid_idx.npy')
+            self.valid_idx = np.load(f'{self.config.data.result_dir}/valid_idx.npy')
             self.train_idx = np.setdiff1d(np.arange(len(self.dataset)), self.valid_idx)
             logging.info("Loaded test/train split.")
         except FileNotFoundError:
@@ -43,7 +42,7 @@ class CellLoader:
         split = int(len(indices) * self.config.train.train_ratio)
         self.train_idx = np.sort(indices[:split])
         self.valid_idx = np.sort(indices[split:])
-        np.save(f'{self.dirname}/valid_idx.npy', self.valid_idx)
+        np.save(f'{self.config.data.result_dir}/valid_idx.npy', self.valid_idx)
     
     def split_dataset(self):
         """Split dataset into train and test sets."""

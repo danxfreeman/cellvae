@@ -1,4 +1,9 @@
 {
+    "data": {
+        "thumb_path": "/n/scratch/users/d/daf179/data/thumbnails.npy",
+        "result_dir": "/n/scratch/users/d/daf179/data/",
+        "crop_size": 32
+    },
     "train": {
         "train_ratio": 0.8,
         "batch_size": 256,
