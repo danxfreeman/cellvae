@@ -32,7 +32,7 @@ class CellCropper():
         """Crop all cells."""
         n_cells = len(self.csv)
         n_channels = self.img.shape[0]
-        self.thumbnails = np.zeros((n_cells, n_channels, self.crop_size, self.crop_size), dtype=np.uint16)
+        self.thumbnails = np.zeros((n_cells, n_channels, self.crop_size, self.crop_size), dtype=self.img.dtype)
         for i, (xcenter, ycenter) in enumerate(self.csv):
             self.thumbnails[i] = self.crop_one(xcenter, ycenter)
             if i % 10_000 == 0 or i == n_cells - 1:
