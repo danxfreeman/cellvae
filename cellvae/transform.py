@@ -15,15 +15,14 @@ class Vignette:
     def __call__(self, x):
         return x * self.mask[None, :, :]
 
-class LogTransform:
+class IFTransform:
 
-    def __init__(self, config):
-        self.qmin = config.preprocess.min_quant
-        self.qmax = config.preprocess.max_quant
+    def __init__(self, qmin=0, qmax=1):
+        self.qmin = qmin
+        self.qmax = qmax
     
     def __call__(self, x):
         x = np.log1p(x)
         xmin, xmax = np.quantile(x, q=(self.qmin, self.qmax), axis=(0, 2, 3), keepdims=True)
         x = (x - xmin) / (xmax - xmin)
-        return np.clip(x, 0, 1).astype(np.float32)
-
+        return x.clip(0, 1).astype(np.float32)
