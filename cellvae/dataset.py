@@ -26,35 +26,31 @@ class CellLoader:
         self.split_dataset()
 
     def split_indices(self):
-        """Load split indicies if available."""
+        """Load or create test/train split."""
         try:
             self.valid_idx = np.load(f'{self.config.data.result_dir}/valid_idx.npy')
-            self.train_idx = np.setdiff1d(np.arange(len(self.dataset)), self.valid_idx)
-            logging.info("Loaded test/train split.")
+            logging.info('Loaded test/train split.')
         except FileNotFoundError:
-            logging.info("Creating new test/train split.")
-            self.create_split()
+            self.valid_idx = self.sample_test()
+            np.save(f'{self.config.data.result_dir}/valid_idx.npy', self.valid_idx)
+        self.train_idx = np.setdiff1d(np.arange(len(self.dataset)), self.valid_idx)
+        logging.info(f'{len(self.train_idx)} train, {len(self.valid_idx)} test.')
 
-    def create_split(self):
-        """Create random test/train split."""
-        indices = np.arange(len(self.dataset.thumbnails))
-        np.random.shuffle(indices)
-        split = int(len(indices) * self.config.train.train_ratio)
-        self.train_idx = np.sort(indices[:split])
-        self.valid_idx = np.sort(indices[split:])
-        np.save(f'{self.config.data.result_dir}/valid_idx.npy', self.valid_idx)
+    def sample_test(self):
+        """Subset random test set."""
+        valid_ratio = 1 - self.config.train.train_ratio
+        valid_size = int(valid_ratio * len(self.dataset))
+        return np.random.choice(len(self.dataset), size=valid_size, replace=False)
     
     def split_dataset(self):
-        """Split dataset into train and test sets."""
+        """Split dataset."""
         self.train_set = Subset(self.dataset, self.train_idx)
         self.valid_set = Subset(self.dataset, self.valid_idx)
         self.train_loader = self.load_dataset(self.train_set)
         self.valid_loader = self.load_dataset(self.valid_set)
     
     def load_dataset(self, dataset):
-        """Load dataset into DataLoader."""
-        if len(dataset) == 0:
-            return []
+        """Load dataset."""
         return DataLoader(
             dataset,
             shuffle=True,
