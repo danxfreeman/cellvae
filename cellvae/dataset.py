@@ -8,13 +8,13 @@ class CellDataset(Dataset):
 
     def __init__(self, config, augment_fn=None):
         self.thumbnails = np.load(config.data.thumb_path)
-        self.augment = augment_fn or (lambda x: x)
+        self.augment = augment_fn or torch.as_tensor
 
     def __len__(self):
         return len(self.thumbnails)
 
     def __getitem__(self, idx):
-        x = torch.from_numpy(self.thumbnails[idx])
+        x = self.thumbnails[idx]
         return self.augment(x)
 
 class CellLoader:
