@@ -16,7 +16,7 @@ class CellCropper():
     
     def clamp_cells(self):
         """Clamp cells to image boundaries."""
-        bounds = np.array(self.img.shape[1:]) - self.offset
+        bounds = np.array([self.img.shape[2], self.img.shape[1]]) - self.offset
         self.csv = self.csv.clip(self.offset, bounds)
 
     def crop(self):
