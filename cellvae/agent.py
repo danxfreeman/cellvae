@@ -1,39 +1,36 @@
-import os
 import logging
 from datetime import datetime
 
+import pandas as pd
 import torch
 import torch.nn.functional as F
-import pandas as pd
 
 from cellvae.model import CellVAE
 
 class CellAgent:
 
-    def __init__(self, config, loader=None, in_channels=None, outdir='results'):
+    def __init__(self, config, loader):
         self.config = config
         self.loader = loader
-        os.makedirs(outdir, exist_ok=True)
-        self.weights_path = f'{outdir}/checkpoint.pth.tar'
-        self.loss_path = f'{outdir}/loss.csv'
+        self.ckpt_path = f'{self.config.data.result_dir}/checkpoint.pth.tar'
+        self.loss_path = f'{self.config.data.result_dir}/loss.csv'
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        in_channels = in_channels or self.loader.dataset[0].shape[0]
-        self.model = CellVAE(self.config, in_channels=in_channels).to(self.device)
-        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.model.learning_rate)
-        self.current_epoch = 1
+        self.model = CellVAE(self.config).to(self.device)
+        self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.train.learning_rate)
         self.load_checkpoint()
 
     def load_checkpoint(self):
         """Load checkpoint if available."""
         try:
-            checkpoint = torch.load(self.weights_path, map_location=self.device)
+            checkpoint = torch.load(self.ckpt_path, map_location=self.device)
             self.current_epoch = checkpoint['epoch']
             self.model.load_state_dict(checkpoint['model'])
             self.opt.load_state_dict(checkpoint['optimizer'])
-            logging.info(f'Checkpoint loaded at epoch {self.current_epoch}.')
+            logging.info(f'Loaded checkpoint at epoch {self.current_epoch}.')
         except FileNotFoundError:
             logging.info('No checkpoint found. Creating new model.')
-    
+            self.current_epoch = 1
+
     def save_checkpoint(self):
         """Save checkpoint."""
         state = {
@@ -41,7 +38,7 @@ class CellAgent:
             'model': self.model.state_dict(),
             'optimizer': self.opt.state_dict()
         }
-        torch.save(state, self.weights_path)
+        torch.save(state, self.ckpt_path)
 
     def run(self):
         """Main operator."""
@@ -49,8 +46,9 @@ class CellAgent:
             self.train()
         except KeyboardInterrupt:
             logging.info('Process interrupted. Exiting.')
+            self.save_checkpoint()
         finally:
-            logging.info('Processing complete.')
+            logging.info('DONE.')
 
     def train(self):
         """Train model."""
