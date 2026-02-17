@@ -105,25 +105,6 @@ class CellAgent:
         sum_loss = mse_loss + (kld_loss * self.config.model.beta)
         return mse_loss, kld_loss, sum_loss
 
-    def _infer(self, x, fn, batch_size=10):
-        """Process dataset in batches."""
-        self.model.eval()
-        with torch.no_grad():
-            for i, x_batch in enumerate(x):
-                x_batch = x_batch[None] if x_batch.ndim == 3 else x_batch
-                x_batch = x_batch.to(self.device)
-                if i % batch_size == 0:
-                    logging.info(f'Processing batch {i} of {len(x)}.')
-                yield fn(x_batch)[0].detach().cpu()
-    
-    def encode(self, x):
-        """Encode thumbnails."""
-        yield from self._infer(x, self.model.encoder)
-
-    def decode(self, x):
-        """Reconstruct thumbnails."""
-        yield from self._infer(x, self.model)
-
     def save_loss(self):
         """Save loss to CSV."""
         len_train = len(self.loader.train_loader) or 1
