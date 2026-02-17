@@ -3,17 +3,16 @@ import torch
 
 class Vignette:
 
-    def __init__(self, config):
-        x = np.linspace(-1, 1, config.preprocess.crop_size, dtype=np.float32)
+    def __init__(self, crop_size, alpha):
+        x = np.linspace(-1, 1, crop_size, dtype=np.float32)
         xx, yy = np.meshgrid(x, x)
         r = np.sqrt(xx**2 + yy**2) / np.sqrt(2)
-        alpha, beta = config.preprocess.alpha, config.preprocess.beta
-        mask = np.cos(0.5*np.pi * np.clip(r**alpha, 0, 1))**beta
+        mask = np.cos(0.5*np.pi * np.clip(r**alpha, 0, 1))
         mask[mask < 0] = 0
         self.mask = torch.tensor(mask)
     
     def __call__(self, x):
-        return x * self.mask[None, :, :]
+        return torch.as_tensor(x) * self.mask[None, :, :]
 
 class IFTransform:
 
