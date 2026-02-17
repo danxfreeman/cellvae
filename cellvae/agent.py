@@ -98,8 +98,8 @@ class CellAgent:
 
     def loss(self, x, x_hat, mu, logvar):
         """Calculate loss."""
-        mse_loss = F.mse_loss(x_hat, x, reduction='sum') / x.size(0)
-        kld_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / x.size(0)
+        mse_loss = F.mse_loss(x_hat, x, reduction='mean')
+        kld_loss = -0.5 * torch.mean(1 + logvar - mu.pow(2) - logvar.exp())
         sum_loss = mse_loss + (kld_loss * self.config.model.beta)
         return mse_loss, kld_loss, sum_loss
 
