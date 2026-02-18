@@ -6,5 +6,5 @@
 #SBATCH -c 4
 
 # Run model.
-cd ~/cellvae/
-~/miniconda3/envs/cnn/bin/python experiment.py
+cd /home/daf179/cellvae/
+/home/daf179/miniconda3/envs/cnn/bin/python experiment.py
